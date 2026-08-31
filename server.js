@@ -98,12 +98,6 @@ async function connectToWhatsApp() {
         const message = m.messages[0];
 
         if (!message.message || message.key.fromMe) return;
-        const command = messageText.split(" ")[0].toLowerCase();
-        if (!commands.includes(command) && !commandsWithContent.includes(command)) {
-            await sleep(3000)
-            await sock.sendMessage(senderNumber, { text: `❌ Invalid command list of commands with !commands`})
-            return;
-        }
 
         const senderNumber = message.key.remoteJid;
 
@@ -112,6 +106,38 @@ async function connectToWhatsApp() {
             || '';
 
         console.log(`Message reçu de ${senderNumber} : ${text}`);
+
+        if (message.message.reactionMessage) {
+            const emoji = message.message.reactionMessage.text;
+            const reactedMessageId = message.message.reactionMessage.key.id;
+
+            const users = loadUsers();
+            const userData = users[senderNumber];
+
+            if (userData?.rulesAccepted) return;
+
+            if (emoji === '✅' && userData && reactedMessageId === userData.rulesMessageId) {
+                userData.rulesAccepted = true;
+                saveUsers(users);
+
+                if (userData.name) {
+                    await sock.sendMessage(senderNumber, { text: `Thanks ${userData.name} for have agree the rules !` });
+                } else {
+                    await sock.sendMessage(senderNumber, { text: `Thanks for have agree the rules` });
+                }
+            }
+            return;
+        }
+
+        if (!text.startsWith('!')) return;
+
+        const command = text.split(" ")[0];
+
+        if (!commands.includes(command) && !commandsWithContent.includes(command)) {
+            await sleep(3000)
+            await sock.sendMessage(senderNumber, { text: `❌ Invalid command list of commands with !commands`})
+            return;
+        }
 
         if (text === '!ChooseName') {
             await sleep(3000)
@@ -145,28 +171,6 @@ async function connectToWhatsApp() {
             saveUsers(users);
 
             await sock.sendMessage(senderNumber, { text: `Ok, your profile has been saved under the name: ${name}` });
-        }
-
-        if (message.message.reactionMessage) {
-            const emoji = message.message.reactionMessage.text;
-            const reactedMessageId = message.message.reactionMessage.key.id;
-
-            const users = loadUsers();
-            const userData = users[senderNumber];
-
-            if (userData?.rulesAccepted) return;
-
-            if (emoji === '✅' && userData && reactedMessageId === userData.rulesMessageId) {
-                userData.rulesAccepted = true;
-                saveUsers(users);
-
-                if (userData.name) {
-                    await sock.sendMessage(senderNumber, { text: `Thanks ${userData.name} for have agree the rules !` });
-                } else {
-                    await sock.sendMessage(senderNumber, { text: `Thanks for have agree the rules` });
-                }
-            }
-            return;
         }
     });
 }
