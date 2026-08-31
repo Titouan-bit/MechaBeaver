@@ -1,0 +1,538 @@
+body {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background-image: url('../fond.png');
+    font-family: Arial, sans-serif;
+}
+
+body.bright-theme {
+    margin: 0;
+    padding: 0;
+    background-image: url('../fond.png');
+    font-family: Arial, sans-serif;
+}
+
+body.dark-theme {
+    margin: 0;
+    padding: 0;
+    background-image: url('../fondblack.png');
+    font-family: Arial, sans-serif;  
+}
+
+
+.waves-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+}
+
+.waves {
+    position: relative;
+    width: 100%;
+    height: 12vh;
+    min-height: 100px;
+    max-height: 150px;
+}
+
+.parallax > use {
+    animation: move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite;
+}
+.parallax > use:nth-child(1) {
+    animation-delay: -2s;
+    animation-duration: 7s;
+}
+.parallax > use:nth-child(2) {
+    animation-delay: -3s;
+    animation-duration: 10s;
+}
+.parallax > use:nth-child(3) {
+    animation-delay: -4s;
+    animation-duration: 13s;
+}
+.parallax > use:nth-child(4) {
+    animation-delay: -5s;
+    animation-duration: 20s;
+}
+
+@keyframes move-forever {
+    0% { transform: translate3d(-90px,0,0); }
+    100% { transform: translate3d(85px,0,0); }
+}
+
+.video-box {
+    position: absolute;
+    display: inline-block;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#video-center {
+    position: relative;
+    z-index: 10;
+    width: 300px;
+    height: auto;
+    display: block;
+}
+
+#AddToWhatsApp {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #ffffff;
+    text-decoration: none;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #25D366 0%, #0b800b 100%);
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.2s ease;
+    width: 300px;
+    height: 75px;
+}
+
+#AddToWhatsApp:hover {
+    background: linear-gradient(135deg, #20bd5a 0%, #0e7065 100%);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+}
+
+#AddToWhatsApp:active {
+    box-shadow: 0 2px 10px rgba(37, 211, 102, 0.3);
+}
+
+.topbar {
+    height: 80px;
+    background: linear-gradient(135deg, #138808 0%, #05501c 100%);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+}
+
+#Mascotte-topbar {
+    width: 107px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+#zone-name {
+  color: #E29D29;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  margin-left: 10px;
+  display: inline-block;
+  transform: scaleY(1.4);
+  cursor: pointer;
+  height: auto;
+}
+
+.AllText {
+    font-family: 'Quicksand', sans-serif;
+}
+
+#settingsbox {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding-right: 15px;
+}
+
+.tiny-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+#Settings {
+    font-size: 30px;
+    color: white;
+}
+
+#SettingsRow {
+    margin-right: 5px;
+}
+
+#settingsDisplay {
+    display: none;
+    background: linear-gradient(135deg, #0B132B, #1C2541);
+    width: 200px;
+    height: 400px;
+    flex-direction: column;
+    border-radius: 20px;
+    position: absolute;
+    top: 120px;
+    left: 85%;
+    user-select: none;
+}
+
+
+#settingsDisplay.bright-theme {
+    background: linear-gradient(135deg, #cbf803, #ceb604);
+}
+
+#settingsDisplay.dark-theme {
+    background: linear-gradient(135deg, #0B132B, #1C2541);
+}
+
+
+#ChooseYourStyle {
+    text-align: left;
+    color: white;
+    width: 100%;
+    height: 0;
+    font-size: 20px;
+}
+
+#modeSVG {
+    justify-content: space-between;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: auto;
+    margin-top: 10px;
+}
+
+#moon {
+    margin-right: 5px;
+    margin-top: 0;
+}
+
+#sun {
+    margin-left: 5px;
+    margin-top: 0;
+}
+
+
+#sun:hover {
+    cursor: pointer;
+    stroke: #ddf50b;
+    transform: scale(1.15);
+}
+
+#moon:hover {
+    cursor: pointer;
+    fill: #4A90E2;
+    stroke: #7EB6FF;
+    transform: scale(1.15);
+}
+
+#or {
+    color: white;
+    font-size: 16px;
+}
+
+#headerSettings fieldset{
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    border: none;
+    height: 45px;
+}
+
+#pSettingsDisplay {
+    margin-left: 5px;
+    color: white;
+    margin-right: 60px;
+    font-size: 20px;
+}
+
+#line {
+    height: 2px;
+    width: 100%;
+    background-color: #2a2e3d;
+    margin-top: 2px;
+}
+
+.closeSVG:hover {
+    cursor: pointer;
+    transform: scale(1.45);
+}
+
+.nl-badge {
+    display: none;
+}
+
+#PopUpAdd {
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    background-color: black;
+    color: white;
+    width: 430px;
+    height: 400px;
+    border-radius: 30px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50% , -50%);
+    z-index: 100;
+}
+
+#headerAdd {
+    color: white;
+    align-items: center;
+}
+
+#red {
+    color: red;
+}
+
+#Rules {
+    margin-top: 15px;
+    align-items: center;
+}
+
+#buttonIAgree {
+    background-color: rgba(76, 110, 62, 0.4);
+    color: #ffffff;
+    border: 1px solid #7ebf41;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-radius: 5px;
+}
+
+#buttonIAgree:hover {
+    background-color: #6a9b43;
+}
+
+#AddToWhatsAppBis {
+    flex-direction: column;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50% , -50%);
+    background-color: black;
+    display: none;
+    width: 395px;
+    height: 250px;
+    border-radius: 25px;
+}
+
+#HeaderAddToWhatsapp {
+    display: flex;
+    align-items: center;
+    color: white;
+    height: 50px;
+}
+
+#orange {
+    color: #E29D29;
+}
+
+#closeAddToWhatsapp {
+    margin-left: 2px;
+}
+
+#RandomP {
+    margin-left: 5px;
+    margin-right: 75px;
+}
+
+#NumberImputDiv {
+    text-align: center;
+}
+
+#NumberImputDiv input {
+    background: #1a1d24;
+    color: white;
+    border: 1px solid #415A77;
+    border-radius: 4px;
+    height: 35px;
+    margin-right: 7px;
+}
+
+#Plus33 {
+    margin-right: 5px;
+}
+
+.input-label {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.inputs-row {
+    display: flex;
+    align-items: center;
+}
+
+.phone-box {
+    background-color: #1a1d24;
+    border: 1px solid #415A77;
+    border-radius: 6px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.phone-box:focus {
+    border-color: #25D366;
+    box-shadow: 0 0 5px rgba(37, 211, 102, 0.5);
+}
+
+.prefix-box {
+    width: 50px;
+    height: 38px;
+    flex-shrink: 0;
+}
+
+.digits-box {
+    display: flex;
+}
+
+.digit {
+    width: 24px;
+    height: 38px;
+}
+
+#YourNumber {
+    color: white;
+}
+
+#sendTheCode {
+    background-color: rgba(76, 110, 62, 0.4);
+    color: #ffffff;
+    border: 1px solid #7ebf41;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 20px;
+    width: 300px;
+    height: 50px;
+    border-radius: 15px;
+}
+
+#sendTheCode:hover {
+    background-color: #6a9b43;
+}
+
+#readOurRules {
+    color: white;
+    margin-top: 210px;
+}
+
+#Randomp {
+    color: white;
+}
+
+#verifyCode {
+    position: absolute;
+    display: none;
+    width: 270px;
+    height: 400px;
+    z-index: 1000;
+    background-color: black;
+    color: white;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 15px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50% , -50%);
+}
+
+#HeaderCodeCheck {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 50px;
+    margin: 0;
+}
+
+#EmoteCheck {
+    margin-right: 10px;
+}
+
+#CheckHeadtitle {
+    margin-right: 70px;
+    font-size: 20px;
+}
+
+#orange2 {
+    color: #E29D29;
+    text-align: center;
+    margin-top: 0;
+}
+
+#typeCode {
+    margin-bottom: 1px;
+}
+
+#codeInput {
+    width: 115px;
+    height: 40px;
+    margin-top: 15px;
+    background-color: #222;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+    font-size: 15px;
+    outline: none;
+}
+
+#OK {
+    background-color: rgba(76, 110, 62, 0.4);
+    color: #ffffff;
+    border: 1px solid #7ebf41;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 115px;
+    margin-left: 5px;
+    height: 40px;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+#OK:hover {
+    background-color: #6a9b43;
+}
+
+#randomDiv {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+}
+
+
+.popup-box {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-image 0.3s ease;
+}
+
+body.bright-theme .popup-box {
+    background: linear-gradient(135deg, #cbf803, #ceb604);
+    color: black !important;
+}
+
+
+body.dark-theme .popup-box {
+    background: linear-gradient(135deg, #0B132B, #1C2541);
+    color: white !important; 
+}

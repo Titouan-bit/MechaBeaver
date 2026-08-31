@@ -1,0 +1,36 @@
+body {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background-image: url('../fond.png');
+    font-family: Arial, sans-serif;
+}
+
+body.bright-theme {
+    margin: 0;
+    padding: 0;
+    background-image: url('../fond.png');
+    font-family: Arial, sans-serif;
+}
+
+body.dark-theme {
+    margin: 0;
+    padding: 0;
+    background-image: url('../fondblack.png');
+    font-family: Arial, sans-serif;  
+}
+
+body.bright-theme #Rules {
+    background-color: white;
+    color: black;
+}
+
+body.dark-theme #Rules {
+    background-color: black;
+    color: white;
+}
+
+#Rules {
+    width: 100%;
+    height: 800px;
+}

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A cool Bot for your watsapp channels !">
+    <title>MECHA BEAVER BOT</title>
+    <link rel="icon" href="../Mascotte.png">
+    <link rel="stylesheet" href="../CSS/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="waves-container">
+        <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+            <defs>
+                <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+            </defs>
+            <g class="parallax">
+                <use href="#gentle-wave" x="48" y="0" fill="rgba(37, 211, 102, 0.25)" />
+                <use href="#gentle-wave" x="48" y="3" fill="rgba(37, 211, 102, 0.5)" />
+                <use href="#gentle-wave" x="48" y="5" fill="rgba(16, 185, 80, 0.75)" />
+                <use href="#gentle-wave" x="48" y="7" fill="#0b7a3e" />
+            </g>
+        </svg>
+    </div> 
+    <div class="video-box">
+        <video autoplay loop muted playsinline id="video-center">
+            <source src="HTML/Mascotte-Animated.webm" type="video/webm">
+        </video>
+    </div>
+    <div>
+        <button id="AddToWhatsApp">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white" style="margin-right: 10px; flex-shrink: 0;">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.197 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.119.553 4.11 1.524 5.842L0 24l6.335-1.652C8.016 23.29 9.947 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.805 0-3.513-.484-4.991-1.328l-.358-.203-3.708.968.99-3.613-.23-.365C2.79 15.96 2 14.049 2 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z"/>
+            </svg>
+            ADD TO WHATSAPP
+        </button>
+    </div>
+    <div class="topbar">
+        <div>
+            <img src="../Mascotte.png" id="Mascotte-topbar">
+        </div>
+        <div id="zone-name">
+            <p><strong>MECHA-BEAVER</strong></p>
+        </div>
+        <div id="settingsbox">
+            <svg class="tiny-icon" id="SettingsRow" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <p class="AllText" id="Settings">Settings</p>
+        </div>
+    </div>
+    <div id="settingsDisplay" class="popup-box">
+        <div id="headerSettings">
+            <fieldset>
+                <svg class="tiny-icon" id="SettingsRowDisplay" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <p id="pSettingsDisplay">Settings</p>
+                <svg class="closeSVG" id="closeSettings" width="13" height="13" viewBox="0 0 150 150" fill="#F85149">
+                    <path d="M 120 0 L 150 30 L 105 75 L 150 120 L 120 150 L 75 105 L 30 150 L 0 120 L 45 75 L 0 30 L 30 0 L 75 45 Z"/>
+                </svg>
+            </fieldset>
+            <div id="line"></div>
+        </div>
+        <div>
+            <p id="ChooseYourStyle">Choose the style:</p>
+        </div>
+        <div id="modeSVG">
+            <img id="sun" src="./sun.png" width="48" height="48">
+            <p id="or">OR</p>
+            <svg id="moon" width="48" height="48" viewBox="0 0 24 24" fill="#1B263B" stroke="#415A77" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </div>
+        <div id="readOurRules"></div>
+        <p id="Randomp">Read our <a href="https://mechabeaverbot.netlify.app/rules" id="RulesA">Rules</a></p>
+    </div>
+    <div id="PopUpAdd" class="popup-box">
+        <div id="headerAdd">
+            <p id="someInfos">📋 Some infos</p>
+        </div>
+        <div id="line"></div>
+        <div id="infos">
+            <p>⚠️ By entering your phone number, the bot will be able to:</p>
+            <ul>
+                <li>Access to the custom name chosen with !pseudo</li>
+                <li>Send you direct/private messages (DMs)</li>
+                <li>Perform actions on your behalf (with authorization) ex <span id="red"> ban or mute a group member</span></li>
+            </ul>
+        </div>
+        <div id="line"></div>
+        <p id="HowItWorks">Steps:</p>
+        <ul>
+            <li>Enter your phone number</li>
+            <li>Check the code received</li>
+            <li>Enter it in the pop-up window that appears</li>
+        </ul>
+        <div id="line"></div>
+        <div id="Rules">
+            <span>By clicking this button, you agree to our <a href="https://mechabeaverbot.netlify.app/rules">Rules</a> :</span>
+            <button id="buttonIAgree">I Agree</button>
+        </div>
+    </div>
+    <div id="AddToWhatsAppBis" class="popup-box">
+        <div id="HeaderAddToWhatsapp">
+            <span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M11 5v6H5a1 1 0 0 0 0 2h6v6a1 1 0 0 0 2 0v-6h6a1 1 0 0 0 0-2h-6V5a1 1 0 0 0-2 0z" fill="#ffffff" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <p id="RandomP">Add <span id="orange">MECHHA-BEAVER</span> to Whatsapp</p>
+            <svg class="closeSVG" id="closeAddToWhatsapp" width="13" height="13" viewBox="0 0 150 150" fill="#F85149">
+                <path d="M 120 0 L 150 30 L 105 75 L 150 120 L 120 150 L 75 105 L 30 150 L 0 120 L 45 75 L 0 30 L 30 0 L 75 45 Z"/>
+            </svg>
+        </div>
+        <div id="line"></div>
+        <div id="NumberImputDiv">
+            <p id="YourNumber">Write or paste your number here</p>
+            <div id="NumberInput">
+                <div class="digits-box">
+                    <input id="Plus33" type="text" value="+33" style="width: 45px; text-align: center ;" maxlength="4">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                    <input type="text" class="phone-box digit" maxlength="1">
+                </div>
+            </div>
+            <button type="button" id="sendTheCode">Send me my code !</button>
+        </div>
+    </div>
+    <div id="verifyCode" class="popup-box">
+        <div id="HeaderCodeCheck">
+            <p id="EmoteCheck">✅</p>
+            <p id="CheckHeadtitle">VerifyYourCode</p>
+            <svg class="closeSVG" id="closeVerifyCode" width="13" height="13" viewBox="0 0 150 150" fill="#F85149">
+                <path d="M 120 0 L 150 30 L 105 75 L 150 120 L 120 150 L 75 105 L 30 150 L 0 120 L 45 75 L 0 30 L 30 0 L 75 45 Z"/>
+            </svg>
+        </div>
+        <div id="line"></div>
+        <p id="typeCode">Type or paste here the code sent by</p>
+        <p id="orange2">MECHHA-BEAVER</p>
+        <div id="randomDiv">
+            <input type="text" id="codeInput" placeholder="Enter here">
+            <button id="OK">OK</button>
+        </div>
+    </div>
+    <script src="JS/index.js"></script>
+</body>
+</html>
