@@ -6,7 +6,30 @@ const BotNum = '33474887869@s.whatsapp.net';
 
 const commands = ["!ChooseName"]
 const commandsWithContent = ["!ChooseName"]
-
+const AdminsNumbers = ["33685766621@s.whatsapp.net"]
+const FORBIDDEN_NAMES = [
+  "admin", "administrator", "administrateur", "mod", "moderator", "moderateur",
+  "owner", "fondateur", "founder", "creator", "createur", "createur_bot",
+  "staff", "team", "support", "help", "aide", "service", "sys", "system",
+  "systeme", "root", "superuser", "master", "boss", "chief", "leader",
+  "mechabeaver", "mecha-beaver", "mecha_beaver", "mecha", "beaver",
+  "bot", "robot", "ia", "ai", "automaton", "whatsapp", "wa", "official",
+  "officiel", "verified", "verifie", "security", "securite", "dev", "developer",
+  "developpeur", "webmaster", "tech", "technical",
+  "vip", "premium", "pro", "ultra", "gold", "elite", "god", "dieu",
+  "king", "queen", "president", "ceo", "co-owner", "head", "manager",
+  "supervisor", "superviseur", "assistant", "agent", "rep", "representative",
+  "null", "undefined", "none", "anonymous", "anonyme", "unknown", "inconnu",
+  "test", "testing", "tester", "demo", "guest", "invite", "user", "utilisateur",
+  "member", "membre", "everyone", "here", "all", "tous", "nobody", "personne",
+  "help", "cmd", "command", "setting", "settings", "config", "configuration",
+  "ban", "kick", "mute", "warn", "rule", "rules", "regle", "regles",
+  "status", "statut", "info", "infos", "log", "logs", "api", "database",
+  "db", "server", "serveur", "token", "auth", "login", "password",
+  "giveaway", "free", "gratuit", "payment", "paiement", "gift", "cadeau",
+  "reward", "rewards", "contest", "concours", "win", "winner", "gagnant",
+  "verify", "verification", "check", "code", "otp", "billing", "facture"
+];
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -75,6 +98,12 @@ async function connectToWhatsApp() {
         const message = m.messages[0];
 
         if (!message.message || message.key.fromMe) return;
+        const command = messageText.split(" ")[0].toLowerCase();
+        if (!commands.includes(command) && !commandsWithContent.includes(command)) {
+            await sleep(3000)
+            await sock.sendMessage(senderNumber, { text: `❌ Invalid command list of commands with !commands`})
+            return;
+        }
 
         const senderNumber = message.key.remoteJid;
 
@@ -84,15 +113,21 @@ async function connectToWhatsApp() {
 
         console.log(`Message reçu de ${senderNumber} : ${text}`);
 
-        
         if (text === '!ChooseName') {
             await sleep(3000)
             await sock.sendMessage(senderNumber, { text: `Ok, Good command, you can now write !ChooseName (the name of your choice without special characters just _ allowed) you can change the name after.`});
-            const name = text.replace('!ChooseName', '').trim();
-            
+
         } else if (text.startsWith('!ChooseName')) {
             let name = text.replace('!ChooseName', '').trim();
             name = name.replace(/ /g, '_');
+
+            if (FORBIDDEN_NAMES.some(forbidden => name.toLowerCase().includes(forbidden))) {
+                if (!AdminsNumbers.includes(senderNumber)) {
+                    await sleep(3000)
+                    await sock.sendMessage(senderNumber, { text: "❌ This name is forbidden restart the command" });
+                    return;
+                }
+            }
 
             if (!name || /[^a-zA-Z0-9_]/.test(name)) {
                 await sleep(3000)
@@ -103,10 +138,35 @@ async function connectToWhatsApp() {
             await sleep(3000)
 
             const users = loadUsers();
-            users[senderNumber] = name;
+            users[senderNumber] = {
+                ...users[senderNumber],
+                name: name
+            };
             saveUsers(users);
 
             await sock.sendMessage(senderNumber, { text: `Ok, your profile has been saved under the name: ${name}` });
+        }
+
+        if (message.message.reactionMessage) {
+            const emoji = message.message.reactionMessage.text;
+            const reactedMessageId = message.message.reactionMessage.key.id;
+
+            const users = loadUsers();
+            const userData = users[senderNumber];
+
+            if (userData?.rulesAccepted) return;
+
+            if (emoji === '✅' && userData && reactedMessageId === userData.rulesMessageId) {
+                userData.rulesAccepted = true;
+                saveUsers(users);
+
+                if (userData.name) {
+                    await sock.sendMessage(senderNumber, { text: `Thanks ${userData.name} for have agree the rules !` });
+                } else {
+                    await sock.sendMessage(senderNumber, { text: `Thanks for have agree the rules` });
+                }
+            }
+            return;
         }
     });
 }
@@ -149,12 +209,28 @@ app.post('/send-HelloMessage', async (req, res) => {
 
     const cleanDigits = phoneNumber.replace(/\D/g, ''); 
     const cleanNumber = `${cleanDigits}@s.whatsapp.net`;
-    try {
-        await sock.sendMessage(cleanNumber, { text: `Hi thanks to use MechaBeaver ! /nSome Rules for the first time: /n -Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com) /n -Don't sapm the bot /n -Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName` });
-        res.json({ success: true, message: 'Success ! You can now awnser to mecha beaver' });
-    } catch (err) {
-        console.error('Erreur d envoi :', err);
-        res.status(500).json({ success: false, error: err.message || 'An error occurred while sending' });
+
+    const users = loadUsers();
+    const isReturningUser = users.hasOwnProperty(cleanNumber);
+
+    if (!isReturningUser) {
+        try {
+            const sentMessage = await sock.sendMessage(cleanNumber, { text: `Hi thanks to use MechaBeaver !\nSome Rules for the first time:\n-Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com)\n-Don't spam the bot\n-Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName` });
+            users[cleanNumber] = {
+                rulesMessageId: sentMessage.key.id,
+                rulesAccepted: false,
+                name: null
+            };
+            saveUsers(users);
+            res.json({ success: true, message: 'Success ! You can now awnser to mecha beaver' });
+        } catch (err) {
+            console.error('Erreur d envoi :', err);
+            res.status(500).json({ success: false, error: err.message || 'An error occurred while sending' });
+        }
+    } else {
+        const savedName = users[cleanNumber].name;
+        await sock.sendMessage(cleanNumber, {text: `Hi Success session loaded ${savedName || ''}` })
+        res.json({ success: true, message: 'Session loaded' });
     }
 });
 app.listen(3000, () => {
