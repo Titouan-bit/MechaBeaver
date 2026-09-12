@@ -4,7 +4,12 @@ const { makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys
 const pino = require('pino');
 const fs = require('fs');
 
+const uri = "mongodb+srv://cordetitouan_db_user:C4acjgzdyKx79C19@cluster0.0gs17s7.mongodb.net/?appName=Cluster0";
+const mongoose = require('mongoose');
 
+mongoose.connect(uri)
+  .then(() => console.log('🍃 Connecté à MongoDB avec succès !'))
+  .catch((err) => console.error('❌ Erreur de connexion MongoDB :', err));
 let ISfirstGuild = 1;
 const refusalReplies = [
     "No.",
@@ -1318,7 +1323,11 @@ app.post('/send-code', async (req, res) => {
 });
 
 app.get('/ping', (req, res) => {
-    res.send('OK');
+  res.send('OK');
+});
+
+app.get('/', (req, res) => {
+  res.send('Bot en ligne !');
 });
 
 const port = process.env.PORT || 3000;
