@@ -57,7 +57,7 @@ async function useMongoDBAuthState() {
         }
     };
 
-    const creds = await readData('creds') || makeWASocket.generateCreds();
+    const creds = await readData('creds') || initAuthCreds();
 
     return {
         state: {
