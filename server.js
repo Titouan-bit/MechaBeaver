@@ -1419,6 +1419,22 @@ app.post('/send-code', async (req, res) => {
     }
 });
 
+// ✅ Ajout de la route manquante pour valider le code
+app.post('/send-HelloMessage', async (req, res) => {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber || !sock) {
+        return res.status(400).json({ success: false, error: 'Numéro manquant ou bot déconnecté.' });
+    }
+
+    const cleanNumber = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+    try {
+        await sendMessageAutoDelete(cleanNumber, { text: "Hello ! Ton compte est vérifié avec succès. 🦫" });
+        return res.json({ success: true, message: "Message envoyé avec succès !" });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get('/ping', (req, res) => {
   res.send('OK');
 });
