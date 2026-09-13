@@ -553,7 +553,7 @@ async function connectToWhatsApp() {
                 users[senderNumber] = userData;
                 saveUsers(users);
                 await sleep(3000);
-                await sendMessageAutoDelete(senderNumber, { text: `✅ Thanks for agreeing to the rules! You can now choose a name with !ChooseName` });
+                await sendMessageAutoDelete(senderNumber, { text: `✅ Thanks for agreeing to the rules! You can now use commands.` });
             }
             return;
         }
@@ -1019,12 +1019,6 @@ async function connectToWhatsApp() {
         if (text.startsWith('!ChooseName')) {
             let name = text.replace('!ChooseName', '').trim().replace(/ /g, '_');
 
-            if (!rulesAccepted) {
-                await sleep(1000);
-                await sendMessageAutoDelete(senderNumber, { text: `❌ Please verify the rules first.` });
-                return;
-            }
-
             if (FORBIDDEN_NAMES.some(forbidden => name.toLowerCase().includes(forbidden))) {
                 if (!AdminsNumbers.includes(senderNumber)) {
                     await sleep(1000);
@@ -1044,6 +1038,7 @@ async function connectToWhatsApp() {
             users[playerJid] = {
                 ...users[playerJid],
                 name: name,
+                rulesAccepted: false,
                 coins: users[playerJid]?.coins || 0,
                 shifumiswons: users[playerJid]?.shifumiswons || 0,
                 shifumis: users[playerJid]?.shifumis || 0,
@@ -1052,8 +1047,19 @@ async function connectToWhatsApp() {
                 inventory: users[playerJid]?.inventory || { mutePower: 0, antiMute: 0 }
             };
             saveUsers(users);
+            
             await sleep(1000);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Profile saved as: ${name}` });
+
+            const rulesText = 
+                "📜 *BOT RULES*\n\n" +
+                "1. Be respectful to all members.\n" +
+                "2. Do not spam or exploit bugs.\n" +
+                "3. Follow group-specific forbidden words.\n\n" +
+                "👉 *React with ✅ to this message to accept the rules and unlock commands!*";
+
+            await sleep(1000);
+            await sendMessageAutoDelete(senderNumber, { text: rulesText });
             await sendMessageAutoDelete(senderNumber, { text: `You can join the community here: https://chat.whatsapp.com/D89cuTgEdJ15xeDT0T8jWU` });
         }
 
@@ -1419,7 +1425,6 @@ app.post('/send-code', async (req, res) => {
     }
 });
 
-// ✅ Ajout de la route manquante pour valider le code
 app.post('/send-HelloMessage', async (req, res) => {
     const { phoneNumber } = req.body;
     if (!phoneNumber || !sock) {
