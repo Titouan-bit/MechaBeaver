@@ -1020,6 +1020,12 @@ async function connectToWhatsApp() {
         if (text.startsWith('!ChooseName')) {
             let name = text.replace('!ChooseName', '').trim().replace(/ /g, '_');
 
+            if (!rulesAccepted) {
+                await sleep(1000);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ Please verify the rules first.` });
+                return;
+            }
+
             if (!name) {
                 await sleep(1000);
                 await sendMessageAutoDelete(senderNumber, { text: `❌ Please provide a name! Example: !ChooseName John` });
@@ -1045,7 +1051,6 @@ async function connectToWhatsApp() {
             users[playerJid] = {
                 ...users[playerJid],
                 name: name,
-                rulesAccepted: false,
                 coins: users[playerJid]?.coins || 0,
                 shifumiswons: users[playerJid]?.shifumiswons || 0,
                 shifumis: users[playerJid]?.shifumis || 0,
