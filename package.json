@@ -4,6 +4,7 @@
   "description": "",
   "main": "topbar.js",
   "scripts": {
+    "start": "node topbar.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +15,7 @@
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "mongoose": "^9.10.0",
     "pino": "^10.3.1"
   }
 }
