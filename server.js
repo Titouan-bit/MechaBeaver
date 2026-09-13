@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { makeWASocket } = require('@whiskeysockets/baileys');
+const { makeWASocket, initAuthCreds } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const mongoose = require('mongoose');
@@ -1404,8 +1404,9 @@ async function connectToWhatsApp() {
     });
 }
 
-connectToWhatsApp();
-
+mongoose.connection.once('open', () => {
+    connectToWhatsApp();
+});
 app.post('/send-code', async (req, res) => {
     const { phoneNumber, code } = req.body;
     if (!phoneNumber || !code || !sock) return res.status(400).json({ success: false });
