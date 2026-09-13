@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { makeWASocket, initAuthCreds } = require('@whiskeysockets/baileys');
+const { makeWASocket, initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const mongoose = require('mongoose');
@@ -11,7 +11,7 @@ mongoose.connect(uri)
   .then(() => console.log('🍃 Connecté à MongoDB avec succès !'))
   .catch((err) => console.error('❌ Erreur de connexion MongoDB :', err));
 
-// Schema MongoDB pour la session Baileys/WhatsApp
+// Schema MongoDB pour la session WhatsApp
 const authSchema = new mongoose.Schema({
     _id: String,
     data: String
@@ -19,14 +19,14 @@ const authSchema = new mongoose.Schema({
 
 const AuthModel = mongoose.model('AuthSession', authSchema);
 
-// Implémentation du gestionnaire d'état d'authentification sur MongoDB
+// Gestion d'état Baileys 100% compatible MongoDB
 async function useMongoDBAuthState() {
     const writeData = async (data, id) => {
         try {
             await AuthModel.findByIdAndUpdate(
                 id, 
-                { data: JSON.stringify(data, (key, value) => typeof value === 'bigint' ? value.toString() : value) },
-                { upsert: true, new: true }
+                { data: JSON.stringify(data, BufferJSON.replacer) },
+                { upsert: true, returnDocument: 'after' }
             );
         } catch (e) {
             console.error('Erreur écriture session MongoDB:', e);
@@ -37,12 +37,7 @@ async function useMongoDBAuthState() {
         try {
             const doc = await AuthModel.findById(id);
             if (!doc || !doc.data) return null;
-            return JSON.parse(doc.data, (key, value) => {
-                if (typeof value === 'string' && /^\d+n$/.test(value)) {
-                    return BigInt(value.slice(0, -1));
-                }
-                return value;
-            });
+            return JSON.parse(doc.data, BufferJSON.reviver);
         } catch (e) {
             console.error('Erreur lecture session MongoDB:', e);
             return null;
@@ -348,7 +343,9 @@ async function connectToWhatsApp() {
                 console.log('Tentative de reconnexion...');
                 connectToWhatsApp();
             } else {
-                console.log('Session corrompue ou révoquée. Supprime la collection MongoDB whatsapp_session et rescanne.');
+                console.log('Session révoquée. Nettoyage et reconnexion...');
+                await AuthModel.deleteMany({});
+                connectToWhatsApp();
             }
         }
     });
@@ -832,7 +829,7 @@ async function connectToWhatsApp() {
 
                         await sendMessageAutoDelete(senderNumber, { text: `❌ @${targetJid.split('@')[0]} has 3 warns -> banned 30 days.`, mentions: [targetJid] });
                     } else {
-                        users[targetJid] = userData;
+                        users[participantJid] = userData;
                         saveUsers(users);
                         await sendMessageAutoDelete(senderNumber, { text: `⚠️ @${targetJid.split('@')[0]} warned (${userData.warns}/3) by an admin.`, mentions: [targetJid] });
                     }
@@ -1404,9 +1401,11 @@ async function connectToWhatsApp() {
     });
 }
 
+// Lancement une fois la base connectée
 mongoose.connection.once('open', () => {
     connectToWhatsApp();
 });
+
 app.post('/send-code', async (req, res) => {
     const { phoneNumber, code } = req.body;
     if (!phoneNumber || !code || !sock) return res.status(400).json({ success: false });
