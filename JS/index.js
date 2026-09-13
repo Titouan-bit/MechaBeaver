@@ -169,7 +169,7 @@ if (!btn) {
         secretCode = String(Number(numberDigits) * 2);
 
         try {
-            const response = await fetch('http://localhost:3000/send-code', {
+            const response = await fetch('https://mechabeaver.onrender.com/send-code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -202,7 +202,7 @@ OK.addEventListener('click', function(){
     if (codeInput) {
         const EnteredCode = codeInput.value;
         if (EnteredCode == secretCode) {
-            fetch('http://localhost:3000/send-HelloMessage', {
+            fetch('https://mechabeaver.onrender.com/send-HelloMessage', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
