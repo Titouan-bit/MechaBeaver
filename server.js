@@ -1,15 +1,104 @@
 const express = require('express');
 const cors = require('cors');
-const { makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const { makeWASocket } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 const uri = "mongodb+srv://cordetitouan_db_user:C4acjgzdyKx79C19@cluster0.0gs17s7.mongodb.net/?appName=Cluster0";
-const mongoose = require('mongoose');
 
 mongoose.connect(uri)
   .then(() => console.log('🍃 Connecté à MongoDB avec succès !'))
   .catch((err) => console.error('❌ Erreur de connexion MongoDB :', err));
+
+// Schema MongoDB pour la session Baileys/WhatsApp
+const authSchema = new mongoose.Schema({
+    _id: String,
+    data: String
+}, { collection: 'whatsapp_session' });
+
+const AuthModel = mongoose.model('AuthSession', authSchema);
+
+// Implémentation du gestionnaire d'état d'authentification sur MongoDB
+async function useMongoDBAuthState() {
+    const writeData = async (data, id) => {
+        try {
+            await AuthModel.findByIdAndUpdate(
+                id, 
+                { data: JSON.stringify(data, (key, value) => typeof value === 'bigint' ? value.toString() : value) },
+                { upsert: true, new: true }
+            );
+        } catch (e) {
+            console.error('Erreur écriture session MongoDB:', e);
+        }
+    };
+
+    const readData = async (id) => {
+        try {
+            const doc = await AuthModel.findById(id);
+            if (!doc || !doc.data) return null;
+            return JSON.parse(doc.data, (key, value) => {
+                if (typeof value === 'string' && /^\d+n$/.test(value)) {
+                    return BigInt(value.slice(0, -1));
+                }
+                return value;
+            });
+        } catch (e) {
+            console.error('Erreur lecture session MongoDB:', e);
+            return null;
+        }
+    };
+
+    const removeData = async (id) => {
+        try {
+            await AuthModel.findByIdAndDelete(id);
+        } catch (e) {
+            console.error('Erreur suppression session MongoDB:', e);
+        }
+    };
+
+    const creds = await readData('creds') || makeWASocket.generateCreds();
+
+    return {
+        state: {
+            creds,
+            keys: {
+                get: async (type, ids) => {
+                    const data = {};
+                    await Promise.all(
+                        ids.map(async (id) => {
+                            let value = await readData(`${type}-${id}`);
+                            if (type === 'app-state-sync-key' && value) {
+                                value = makeWASocket.proto.Message.AppStateSyncKeyData.fromObject(value);
+                            }
+                            data[id] = value;
+                        })
+                    );
+                    return data;
+                },
+                set: async (data) => {
+                    const tasks = [];
+                    for (const category in data) {
+                        for (const id in data[category]) {
+                            const value = data[category][id];
+                            const key = `${category}-${id}`;
+                            if (value) {
+                                tasks.push(writeData(value, key));
+                            } else {
+                                tasks.push(removeData(key));
+                            }
+                        }
+                    }
+                    await Promise.all(tasks);
+                }
+            }
+        },
+        saveCreds: async () => {
+            await writeData(creds, 'creds');
+        }
+    };
+}
+
 let ISfirstGuild = 1;
 const refusalReplies = [
     "No.",
@@ -194,7 +283,7 @@ async function sendMessageAutoDelete(jid, content, options, delay = AUTO_DELETE_
 }
 
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    const { state, saveCreds } = await useMongoDBAuthState();
 
     sock = makeWASocket({
         auth: state,
@@ -259,7 +348,7 @@ async function connectToWhatsApp() {
                 console.log('Tentative de reconnexion...');
                 connectToWhatsApp();
             } else {
-                console.log('Session corrompue ou révoquée. Supprime le dossier de session et rescanne.');
+                console.log('Session corrompue ou révoquée. Supprime la collection MongoDB whatsapp_session et rescanne.');
             }
         }
     });
