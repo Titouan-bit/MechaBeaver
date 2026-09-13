@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { makeWASocket, initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const fs = require('fs');
 const mongoose = require('mongoose');
 
 const uri = "mongodb+srv://cordetitouan_db_user:C4acjgzdyKx79C19@cluster0.0gs17s7.mongodb.net/?appName=Cluster0";
@@ -18,6 +17,35 @@ const authSchema = new mongoose.Schema({
 }, { collection: 'whatsapp_session' });
 
 const AuthModel = mongoose.model('AuthSession', authSchema);
+
+const dataSchema = new mongoose.Schema({
+    _id: String,
+    data: mongoose.Schema.Types.Mixed
+}, { collection: 'bot_data' });
+
+const DataModel = mongoose.model('BotData', dataSchema);
+
+async function loadData(id) {
+    try {
+        const doc = await DataModel.findById(id);
+        return doc ? doc.data : {};
+    } catch (e) {
+        console.error(`Erreur lecture ${id} MongoDB:`, e);
+        return {};
+    }
+}
+
+async function saveData(id, value) {
+    try {
+        await DataModel.findByIdAndUpdate(
+            id,
+            { data: value },
+            { upsert: true }
+        );
+    } catch (e) {
+        console.error(`Erreur écriture ${id} MongoDB:`, e);
+    }
+}
 
 // Gestion d'état Baileys 100% compatible MongoDB
 async function useMongoDBAuthState() {
@@ -112,8 +140,8 @@ const jokes = [
     "My wife told me to stop impersonating a flamingo. I had to put my foot down 🦩"
 ];
 
-const formatGuildText = function(guildId, guildsData) {
-    const users = loadUsers();
+const formatGuildText = async function(guildId, guildsData) {
+    const users = await loadUsers();
     const g = guildsData[guildId];
 
     if (!g) return null;
@@ -152,38 +180,30 @@ const formatGuildText = function(guildId, guildsData) {
 const BotNum = '33474887869@s.whatsapp.net';
 const SupremAdminNum = '33685766621@s.whatsapp.net';
 
-const groupsPath = './groups.json';
-const guildsPath = './guilds.json';
-const forbiddenPath = './forbidden.json';
-const path = './users.json';
-
 const AUTO_DELETE_MS = 60000;
 
-function loadGroups() {
-    if (!fs.existsSync(groupsPath)) return {};
-    return JSON.parse(fs.readFileSync(groupsPath, 'utf-8'));
+async function loadGroups() {
+    return loadData('groups');
 }
 
-function saveGroups(groups) {
-    fs.writeFileSync(groupsPath, JSON.stringify(groups, null, 2));
+async function saveGroups(groups) {
+    return saveData('groups', groups);
 }
 
-function loadGuilds() {
-    if (!fs.existsSync(guildsPath)) return {};
-    return JSON.parse(fs.readFileSync(guildsPath, 'utf-8'));
+async function loadGuilds() {
+    return loadData('guilds');
 }
 
-function saveGuilds(guildsData) {
-    fs.writeFileSync(guildsPath, JSON.stringify(guildsData, null, 2));
+async function saveGuilds(guildsData) {
+    return saveData('guilds', guildsData);
 }
 
-function loadUsers() {
-    if (!fs.existsSync(path)) return {};
-    return JSON.parse(fs.readFileSync(path, 'utf-8'));
+async function loadUsers() {
+    return loadData('users');
 }
 
-function saveUsers(users) {
-    fs.writeFileSync(path, JSON.stringify(users, null, 2));
+async function saveUsers(users) {
+    return saveData('users', users);
 }
 
 async function isGroupAdmin(groupJid, participantJid) {
@@ -251,11 +271,10 @@ function extractJid(participant) {
     return participant.id || participant.jid || participant.phoneNumber || null;
 }
 
-function jidMatchesNumber(jid, cleanNum) {
+function jidMatchesNumber(jid, cleanNum, users) {
     if (!jid || !cleanNum) return false;
     if (jid.split('@')[0] === cleanNum) return true;
-    const users = loadUsers();
-    const linked = users[jid]?.linkedTo;
+    const linked = users?.[jid]?.linkedTo;
     if (linked && linked.split('@')[0] === cleanNum) return true;
     return false;
 }
@@ -288,7 +307,7 @@ async function connectToWhatsApp() {
     });
 
     async function checkExpiredBans() {
-        const users = loadUsers();
+        const users = await loadUsers();
         let changed = false;
 
         for (const jid in users) {
@@ -307,7 +326,7 @@ async function connectToWhatsApp() {
             }
         }
 
-        if (changed) saveUsers(users);
+        if (changed) await saveUsers(users);
     }
 
     setInterval(checkExpiredBans, 60 * 60 * 1000);
@@ -359,18 +378,18 @@ async function connectToWhatsApp() {
                     await sock.rejectCall(call.id, call.from);
                 } catch (e) {}
 
-                const users = loadUsers();
+                const users = await loadUsers();
                 let userData = users[call.from] || { rulesAccepted: false, name: null, warns: 0 };
 
                 userData.warns = (userData.warns || 0) + 1;
                 users[call.from] = userData;
-                saveUsers(users);
+                await saveUsers(users);
 
                 await sleep(3000);
                 if (userData.warns >= 3) {
                     userData.bannedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                     users[call.from] = userData;
-                    saveUsers(users);
+                    await saveUsers(users);
 
                     await sendMessageAutoDelete(call.from, { text: `Congrats ! You reached 3 warns and got ban for 30 days. You will receive a message when you will be unban` });
                     try {
@@ -391,7 +410,7 @@ async function connectToWhatsApp() {
         try {
             if (update.action !== 'add') return;
 
-            const groups = loadGroups();
+            const groups = await loadGroups();
             let groupData = groups[update.id] || {};
 
             if (!groupData.welcomeMessage) return;
@@ -418,7 +437,7 @@ async function connectToWhatsApp() {
 
         const senderNumber = message.key.remoteJid;
         const senderNumberAlt = message.key.remoteJidAlt || null;
-        const users = loadUsers();
+        const users = await loadUsers();
         const userData = users[senderNumber];
         const rulesAccepted = userData?.rulesAccepted === true;
 
@@ -438,7 +457,7 @@ async function connectToWhatsApp() {
         const participantAlt = message.key.participantAlt || null;
 
         if (isGroupMessage) {
-            groups = loadGroups();
+            groups = await loadGroups();
             groupData = groups[senderNumber] || { rules: null, waitingForRules: null, waitingForConfig: null };
             try {
                 const metadata = await sock.groupMetadata(senderNumber);
@@ -462,7 +481,7 @@ async function connectToWhatsApp() {
                     if (!groupData.muted) groupData.muted = {};
                     groupData.muted[participantJid] = Date.now() + (30 * 1000);
                     groups[senderNumber] = groupData;
-                    saveGroups(groups);
+                    await saveGroups(groups);
 
                     await sleep(1000);
                     await sendMessageAutoDelete(senderNumber, { text: `${randomRefusal}\n\n🔇 @${participantJid.split('@')[0]} tried to order me around. Muted 30s.`, mentions: [participantJid] });
@@ -476,7 +495,7 @@ async function connectToWhatsApp() {
         };
 
         const steal = async function (targetJid) {
-            const users = loadUsers();
+            const users = await loadUsers();
 
             if (users[targetJid]?.linkedTo) {
                 targetJid = users[targetJid].linkedTo;
@@ -496,7 +515,7 @@ async function connectToWhatsApp() {
                 users[targetJid].coins = Math.max(0, (users[targetJid].coins || 0) - 30);
                 users[participantJid].stealswons = (users[participantJid].stealswons || 0) + 1;
                 users[participantJid].steals = (users[participantJid].steals || 0) + 1;
-                saveUsers(users);
+                await saveUsers(users);
 
                 await sleep(1000);
                 await sendMessageAutoDelete(senderNumber, { 
@@ -506,7 +525,7 @@ async function connectToWhatsApp() {
             } else {
                 users[participantJid].coins = Math.max(0, (users[participantJid].coins || 0) - 5);
                 users[participantJid].steals = (users[participantJid].steals || 0) + 1;
-                saveUsers(users);
+                await saveUsers(users);
 
                 await sleep(1000);
                 await sendMessageAutoDelete(senderNumber, { 
@@ -519,15 +538,15 @@ async function connectToWhatsApp() {
         console.log(`Message reçu de ${senderNumber} : ${text}`);
 
         if (senderNumberAlt) {
-            const users = loadUsers();
+            const users = await loadUsers();
             if (!users[senderNumberAlt] || users[senderNumberAlt].linkedTo !== senderNumber) {
                 users[senderNumberAlt] = { ...users[senderNumberAlt], linkedTo: senderNumber };
-                saveUsers(users);
+                await saveUsers(users);
             }
         }
 
         if (isGroupMessage && participantAlt && participantJid) {
-            const users = loadUsers();
+            const users = await loadUsers();
             let changed = false;
 
             if (!users[participantAlt] || users[participantAlt].linkedTo !== participantJid) {
@@ -539,12 +558,12 @@ async function connectToWhatsApp() {
                 changed = true;
             }
 
-            if (changed) saveUsers(users);
+            if (changed) await saveUsers(users);
         }
 
         if (message.message.reactionMessage) {
             const emoji = message.message.reactionMessage.text;
-            const users = loadUsers();
+            const users = await loadUsers();
             let userData = users[senderNumber] || { rulesAccepted: false, name: null };
 
             if (userData.rulesAccepted) return;
@@ -552,7 +571,7 @@ async function connectToWhatsApp() {
             if (emoji === '✅') {
                 userData.rulesAccepted = true;
                 users[senderNumber] = userData;
-                saveUsers(users);
+                await saveUsers(users);
                 await sleep(3000);
                 await sendMessageAutoDelete(senderNumber, { text: `✅ Thanks for agreeing to the rules! You can now use commands.` });
             }
@@ -561,7 +580,7 @@ async function connectToWhatsApp() {
 
         if (isGroupMessage) {
             const Admin = await isGroupAdmin(senderNumber, participantJid);
-            const usersForAccount = loadUsers();
+            const usersForAccount = await loadUsers();
             const memberData = usersForAccount[participantJid];
             const hasAccount = memberData && memberData.name;
 
@@ -583,7 +602,7 @@ async function connectToWhatsApp() {
                 } else {
                     delete groupData.muted[participantJid];
                     groups[senderNumber] = groupData;
-                    saveGroups(groups);
+                    await saveGroups(groups);
                 }
             }
 
@@ -608,12 +627,12 @@ async function connectToWhatsApp() {
                     if (!groupData.muted) groupData.muted = {};
                     groupData.muted[participantJid] = Date.now() + (15 * 60 * 1000);
                     groups[senderNumber] = groupData;
-                    saveGroups(groups);
+                    await saveGroups(groups);
 
                     await sendMessageAutoDelete(senderNumber, { text: `🔇 @${participantJid.split('@')[0]} was muted 15min (forbidden word).`, mentions: [participantJid] });
 
                 } else if (matchedCategory === 'warn') {
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     let userData = users[participantJid] || { rulesAccepted: false, name: null, warns: 0 };
                     userData.warns = (userData.warns || 0) + 1;
 
@@ -621,7 +640,7 @@ async function connectToWhatsApp() {
                         userData.bannedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                         userData.warns = 0;
                         users[participantJid] = userData;
-                        saveUsers(users);
+                        await saveUsers(users);
 
                         try {
                             await sock.groupParticipantsUpdate(senderNumber, [participantJid], 'remove');
@@ -629,16 +648,16 @@ async function connectToWhatsApp() {
                         await sendMessageAutoDelete(senderNumber, { text: `❌ @${participantJid.split('@')[0]} has 3 warns -> banned 30 days.`, mentions: [participantJid] });
                     } else {
                         users[participantJid] = userData;
-                        saveUsers(users);
+                        await saveUsers(users);
                         await sendMessageAutoDelete(senderNumber, { text: `⚠️ @${participantJid.split('@')[0]} warned (${userData.warns}/3, forbidden word).`, mentions: [participantJid] });
                     }
 
                 } else if (matchedCategory === 'ban') {
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     let userData = users[participantJid] || { rulesAccepted: false, name: null, warns: 0 };
                     userData.bannedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                     users[participantJid] = userData;
-                    saveUsers(users);
+                    await saveUsers(users);
 
                     try {
                         await sock.groupParticipantsUpdate(senderNumber, [participantJid], 'remove');
@@ -666,7 +685,7 @@ async function connectToWhatsApp() {
 
                 groupData.waitingForRules = { admin: participantJid, expiresAt: Date.now() + 3 * 60 * 1000 };
                 groups[senderNumber] = groupData;
-                saveGroups(groups);
+                await saveGroups(groups);
 
                 await sleep(3000);
                 await sendMessageAutoDelete(senderNumber, { text: `✅ You can now send a message starting with "Rules:"` });
@@ -683,7 +702,7 @@ async function connectToWhatsApp() {
                 groupData.rules = text;
                 groupData.waitingForRules = null;
                 groups[senderNumber] = groupData;
-                saveGroups(groups);
+                await saveGroups(groups);
 
                 await sleep(3000);
                 await sendMessageAutoDelete(senderNumber, { text: `✅ Rules updated for this group ! Everyone can see them with !rules` });
@@ -714,7 +733,7 @@ async function connectToWhatsApp() {
 
                 groupData.waitingForConfig = { admin: participantJid, expiresAt: Date.now() + 3 * 60 * 1000, type: type };
                 groups[senderNumber] = groupData;
-                saveGroups(groups);
+                await saveGroups(groups);
 
                 await sleep(3000);
                 await sendMessageAutoDelete(senderNumber, { text: `✅ Send the list with Words: (word, word, emoji, etc...)` });
@@ -739,7 +758,7 @@ async function connectToWhatsApp() {
 
                 groupData.waitingForConfig = null;
                 groups[senderNumber] = groupData;
-                saveGroups(groups);
+                await saveGroups(groups);
 
                 await sleep(3000);
                 await sendMessageAutoDelete(senderNumber, { text: `✅ Added to auto-${type} list: ${words.join(', ')}` });
@@ -769,11 +788,11 @@ async function connectToWhatsApp() {
                 if (await nope()) return;
 
                 if (cmd === '!ban') {
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     let userData = users[targetJid] || { rulesAccepted: false, name: null, warns: 0 };
                     userData.bannedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                     users[targetJid] = userData;
-                    saveUsers(users);
+                    await saveUsers(users);
 
                     try {
                         await sock.groupParticipantsUpdate(senderNumber, [targetJid], 'remove');
@@ -782,11 +801,11 @@ async function connectToWhatsApp() {
                     await sleep(2000);
                     await sendMessageAutoDelete(senderNumber, { text: `❌ @${targetJid.split('@')[0]} was banned 30 days by an admin.`, mentions: [targetJid] });
                 } else if (cmd === '!unban') {
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     if (users[targetJid]) {
                         users[targetJid].bannedUntil = null;
                         users[targetJid].warns = 0;
-                        saveUsers(users);
+                        await saveUsers(users);
                     }
 
                     try {
@@ -800,7 +819,7 @@ async function connectToWhatsApp() {
                     if (!groupData.muted) groupData.muted = {};
                     groupData.muted[targetJid] = Date.now() + 15 * 60 * 1000;
                     groups[senderNumber] = groupData;
-                    saveGroups(groups);
+                    await saveGroups(groups);
                     await sleep(3000);
                     await sendMessageAutoDelete(senderNumber, { text: `🔇 @${targetJid.split('@')[0]} was muted 15min by an admin.`, mentions: [targetJid] });
 
@@ -808,13 +827,13 @@ async function connectToWhatsApp() {
                     if (groupData.muted && groupData.muted[targetJid]) {
                         delete groupData.muted[targetJid];
                         groups[senderNumber] = groupData;
-                        saveGroups(groups);
+                        await saveGroups(groups);
                     }
                     await sleep(3000);
                     await sendMessageAutoDelete(senderNumber, { text: `🔊 @${targetJid.split('@')[0]} was unmuted by an admin.`, mentions: [targetJid] });
 
                 } else if (cmd === '!warn') {
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     let userData = users[targetJid] || { rulesAccepted: false, name: null, warns: 0 };
                     userData.warns = (userData.warns || 0) + 1;
 
@@ -822,7 +841,7 @@ async function connectToWhatsApp() {
                         userData.bannedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                         userData.warns = 0;
                         users[targetJid] = userData;
-                        saveUsers(users);
+                        await saveUsers(users);
 
                         try {
                             await sock.groupParticipantsUpdate(senderNumber, [targetJid], 'remove');
@@ -831,7 +850,7 @@ async function connectToWhatsApp() {
                         await sendMessageAutoDelete(senderNumber, { text: `❌ @${targetJid.split('@')[0]} has 3 warns -> banned 30 days.`, mentions: [targetJid] });
                     } else {
                         users[participantJid] = userData;
-                        saveUsers(users);
+                        await saveUsers(users);
                         await sendMessageAutoDelete(senderNumber, { text: `⚠️ @${targetJid.split('@')[0]} warned (${userData.warns}/3) by an admin.`, mentions: [targetJid] });
                     }
                 }
@@ -871,7 +890,7 @@ async function connectToWhatsApp() {
                     expiresAt: Date.now() + 30 * 1000
                 };
                 groups[senderNumber] = groupData;
-                saveGroups(groups);
+                await saveGroups(groups);
 
                 await sleep(1000);
                 await sendMessageAutoDelete(senderNumber, { text: `I made my choice now choose 🪨, ✂️ or 🌿 within 30sec or be mute 30sec 🤡` });
@@ -887,13 +906,13 @@ async function connectToWhatsApp() {
                     const botChoice = shifumiGame.botChoice;
                     delete groupData.waitingForShifumi[participantJid];
                     groups[senderNumber] = groupData;
-                    saveGroups(groups);
+                    await saveGroups(groups);
 
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     if (!users[participantJid]) users[participantJid] = {};
 
                     users[participantJid].shifumis = (users[participantJid].shifumis || 0) + 1;
-                    saveUsers(users);
+                    await saveUsers(users);
 
                     await sleep(1500);
                     const isLoose = (botChoice === '🪨' && playerChoice === '✂️') || (botChoice === '✂️' && playerChoice === '🌿') || (botChoice === '🌿' && playerChoice === '🪨');
@@ -907,14 +926,14 @@ async function connectToWhatsApp() {
                         if (!groupData.muted) groupData.muted = {};
                         groupData.muted[participantJid] = Date.now() + (30 * 1000);
                         groups[senderNumber] = groupData;
-                        saveGroups(groups);
+                        await saveGroups(groups);
                     } else if (isEqual) {
                         await sleep(1000);
                         await sendMessageAutoDelete(senderNumber, { text: `${playerChoice} and ${botChoice} are same you are lucky` });
                     } else if (isWin) {
                         users[participantJid].coins = (users[participantJid].coins || 0) + 20;
                         users[participantJid].shifumiswons = (users[participantJid].shifumiswons || 0) + 1;
-                        saveUsers(users);
+                        await saveUsers(users);
                         await sleep(1000);
                         await sendMessageAutoDelete(senderNumber, { text: `${playerChoice} wins against ${botChoice}! You earned 20 coins 😭` });
                     }
@@ -935,7 +954,7 @@ async function connectToWhatsApp() {
         if (text === "!description") {
             if (await nope()) return;
 
-            const guilds = loadGuilds();
+            const guilds = await loadGuilds();
             const playerJid = isGroupMessage ? participantJid : senderNumber;
             const playerGuildEntry = Object.entries(guilds).find(([_, g]) => g.leader === playerJid);
 
@@ -953,12 +972,12 @@ async function connectToWhatsApp() {
             if (isGroupMessage) {
                 groupData.waitingForDescription = waitingData;
                 groups[senderNumber] = groupData;
-                saveGroups(groups);
+                await saveGroups(groups);
             } else {
-                const users = loadUsers();
+                const users = await loadUsers();
                 if (!users[senderNumber]) users[senderNumber] = {};
                 users[senderNumber].waitingForDescription = waitingData;
-                saveUsers(users);
+                await saveUsers(users);
             }
 
             await sendMessageAutoDelete(senderNumber, { text: `✅ Send the description starting with "description:" within 3min` });
@@ -968,7 +987,7 @@ async function connectToWhatsApp() {
         const activePlayerJid = isGroupMessage ? participantJid : senderNumber;
         const waitingState = isGroupMessage 
             ? groupData?.waitingForDescription 
-            : loadUsers()[senderNumber]?.waitingForDescription;
+            : (await loadUsers())[senderNumber]?.waitingForDescription;
 
         if (waitingState && waitingState.admin === activePlayerJid && Date.now() < waitingState.expiresAt) {
 
@@ -982,23 +1001,23 @@ async function connectToWhatsApp() {
                     return;
                 }
 
-                const guilds = loadGuilds();
+                const guilds = await loadGuilds();
                 const targetGuildId = waitingState.guildId;
 
                 if (guilds[targetGuildId]) {
                     guilds[targetGuildId].description = rawText;
-                    saveGuilds(guilds);
+                    await saveGuilds(guilds);
                 }
 
                 if (isGroupMessage) {
                     groupData.waitingForDescription = null;
                     groups[senderNumber] = groupData;
-                    saveGroups(groups);
+                    await saveGroups(groups);
                 } else {
-                    const users = loadUsers();
+                    const users = await loadUsers();
                     if (users[senderNumber]) {
                         delete users[senderNumber].waitingForDescription;
-                        saveUsers(users);
+                        await saveUsers(users);
                     }
                 }
 
@@ -1047,7 +1066,7 @@ async function connectToWhatsApp() {
             }
 
             const playerJid = isGroupMessage ? participantJid : senderNumber;
-            const users = loadUsers();
+            const users = await loadUsers();
             users[playerJid] = {
                 ...users[playerJid],
                 name: name,
@@ -1058,7 +1077,7 @@ async function connectToWhatsApp() {
                 steals: users[playerJid]?.steals || 0,
                 inventory: users[playerJid]?.inventory || { mutePower: 0, antiMute: 0 }
             };
-            saveUsers(users);
+            await saveUsers(users);
             
             await sleep(1000);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Profile saved as: ${name}` });
@@ -1067,7 +1086,7 @@ async function connectToWhatsApp() {
         if (text.startsWith("!changeName")) {
             let newName = text.replace('!changeName', '').trim().replace(/ /g, '_');
             const playerJid = isGroupMessage ? participantJid : senderNumber;
-            const users = loadUsers();
+            const users = await loadUsers();
 
             if (!users[playerJid]) {
                 await sendMessageAutoDelete(senderNumber, { text: `❌ Account not found. Use !ChooseName first.` });
@@ -1080,7 +1099,7 @@ async function connectToWhatsApp() {
             }
 
             users[playerJid].name = newName;
-            saveUsers(users);
+            await saveUsers(users);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Name updated to: ${newName}` });
         }
 
@@ -1107,7 +1126,7 @@ async function connectToWhatsApp() {
                 targetJid = isGroupMessage ? participantJid : senderNumber;
             }
 
-            const users = loadUsers();
+            const users = await loadUsers();
 
             if (users[targetJid]?.linkedTo) {
                 targetJid = users[targetJid].linkedTo;
@@ -1196,6 +1215,7 @@ async function connectToWhatsApp() {
             }
 
             const cleanTargetNum = targetJid.split('@')[0];
+            const usersForSteal = await loadUsers();
 
             const senderCandidates = [
                 participantJid,
@@ -1205,7 +1225,7 @@ async function connectToWhatsApp() {
 
             const isSelfSteal = senderCandidates.some(jid => jid.split('@')[0] === cleanTargetNum)
                 || senderCandidates.includes(targetJid)
-                || jidMatchesNumber(participantJid, cleanTargetNum);
+                || jidMatchesNumber(participantJid, cleanTargetNum, usersForSteal);
 
             if (isSelfSteal) {
                 await sleep(1000);
@@ -1215,7 +1235,7 @@ async function connectToWhatsApp() {
 
             try {
                 const metadata = await sock.groupMetadata(senderNumber);
-                const isTargetInGroup = metadata.participants.some(p => jidMatchesNumber(p.id, cleanTargetNum));
+                const isTargetInGroup = metadata.participants.some(p => jidMatchesNumber(p.id, cleanTargetNum, usersForSteal));
 
                 if (!isTargetInGroup) {
                     await sleep(1000);
@@ -1264,7 +1284,7 @@ async function connectToWhatsApp() {
                 return;
             }
 
-            const users = loadUsers();
+            const users = await loadUsers();
 
             if (users[targetJid]?.linkedTo) {
                 targetJid = users[targetJid].linkedTo;
@@ -1275,14 +1295,14 @@ async function connectToWhatsApp() {
             }
 
             users[targetJid].coins = (users[targetJid].coins || 0) + amount;
-            saveUsers(users);
+            await saveUsers(users);
 
             await sleep(2000);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Ok ${amount} 🪙 gave to @${targetJid.split('@')[0]}`, mentions: [targetJid] });
         }
 
         if (text === "!guilds") {
-            const guildsData = loadGuilds();
+            const guildsData = await loadGuilds();
             const guildList = Object.values(guildsData);
             if (Object.keys(guildsData).length === 0) {
                 await sendMessageAutoDelete(senderNumber, { text: `There are no guilds yet: Be the first to create one with !CreateGuild (Name)` });
@@ -1303,7 +1323,7 @@ async function connectToWhatsApp() {
                 await sendMessageAutoDelete(senderNumber, { text: `❌ Invalid name, use only letters, numbers and _` });
                 return;
             }
-            const guilds = loadGuilds();
+            const guilds = await loadGuilds();
 
             const nameExists = Object.values(guilds).some(g => g.name.toLowerCase() === guildName.toLowerCase());
             if (nameExists) {
@@ -1326,9 +1346,9 @@ async function connectToWhatsApp() {
                 stats: { warsWon: 0, warsLost: 0 }
             };
 
-            saveGuilds(guilds);
+            await saveGuilds(guilds);
 
-            const guildData = formatGuildText(guildId, guilds);
+            const guildData = await formatGuildText(guildId, guilds);
 
             await sleep(2000);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Successful guild ${guildName} created ! Join him/her now !` });
@@ -1341,7 +1361,7 @@ async function connectToWhatsApp() {
 
         if (text.startsWith("!guild ")) {
             const requestedName = text.replace('!guild', '').trim();
-            const guilds = loadGuilds();
+            const guilds = await loadGuilds();
 
             const guildId = Object.keys(guilds).find(
                 id => guilds[id].name.toLowerCase() === requestedName.toLowerCase()
@@ -1353,7 +1373,7 @@ async function connectToWhatsApp() {
                 return;
             }
 
-            const guildData = formatGuildText(guildId, guilds);
+            const guildData = await formatGuildText(guildId, guilds);
 
             await sleep(1000);
             await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
@@ -1362,7 +1382,7 @@ async function connectToWhatsApp() {
 
         if (text.startsWith("!join ")) {
             const requestedName = text.replace('!join', '').trim();
-            const guilds = loadGuilds();
+            const guilds = await loadGuilds();
             const playerJid = isGroupMessage ? participantJid : senderNumber;
 
             const guildId = Object.keys(guilds).find(
@@ -1395,12 +1415,12 @@ async function connectToWhatsApp() {
             targetGuild.members.push(playerJid);
             targetGuild.memberCount = targetGuild.members.length;
 
-            saveGuilds(guilds);
+            await saveGuilds(guilds);
 
             await sleep(1500);
             await sendMessageAutoDelete(senderNumber, { text: `✅ @${playerJid.split('@')[0]} joined ${targetGuild.name} !`, mentions: [playerJid] });
 
-            const guildData = formatGuildText(guildId, guilds);
+            const guildData = await formatGuildText(guildId, guilds);
 
             await sleep(1000);
             await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
