@@ -20,9 +20,12 @@ const refusalReplies = [
 ];
 
 const jokes = [
-    "Why do programmers prefer dark mode? Because light attracts bugs 🐛",
-    "I told my computer I needed a break, and now it won't stop sending me KitKats 🍫",
-    "There are 10 types of people in the world: those who understand binary and those who don't"
+    "Why don't scientists trust atoms? Because they make up everything! ⚛️",
+    "I told my doctor that I broke my arm in two places. He told me to stop going to those places 🏥",
+    "Why do we tell actors to 'break a leg'? Because every play has a cast 🎭",
+    "What do you call a fake noodle? An impasta 🍝",
+    "Why don't eggs tell jokes? They'd crack each other up 🥚",
+    "My wife told me to stop impersonating a flamingo. I had to put my foot down 🦩"
 ];
 
 const formatGuildText = function(guildId, guildsData) {
@@ -110,7 +113,7 @@ async function isGroupAdmin(groupJid, participantJid) {
 }
 
 const commands = ["!ChooseName", "!changeName", "!commands", "!contact", "!forbiddenwords", "!rules", "!test", "!shifumi", "!joke", "!profile", "!guilds", "!steal"];
-const commandsWithContent = ["!ChooseName", "!changeName", "!steal", "!CreateGuild", "!give", "!description", "!guild"];
+const commandsWithContent = ["!ChooseName", "!changeName", "!steal", "!CreateGuild", "!give", "!description", "!guild", "!join"];
 const AdminCommandsWithContent = ["!ban", "!unban", "!mute", "!unmute", "!warn"];
 const AdminCommands = ["!setrules", "!config-automute", "!config-autowarn", "!delete-auto", "!config-autoban", "!welcome"];
 
@@ -731,7 +734,7 @@ async function connectToWhatsApp() {
                     if (userData.warns >= 3) {
                         userData.bannedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                         userData.warns = 0;
-                        users[participantJid] = userData;
+                        users[targetJid] = userData;
                         saveUsers(users);
 
                         try {
@@ -963,7 +966,9 @@ async function connectToWhatsApp() {
                 inventory: users[playerJid]?.inventory || { mutePower: 0, antiMute: 0 }
             };
             saveUsers(users);
+            await sleep(1000);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Profile saved as: ${name}` });
+            await sendMessageAutoDelete(senderNumber, { text: `You can join the community here: https://chat.whatsapp.com/D89cuTgEdJ15xeDT0T8jWU` });
         }
 
         if (text.startsWith("!changeName")) {
@@ -1190,16 +1195,17 @@ async function connectToWhatsApp() {
                 await sendMessageAutoDelete(senderNumber, { text: `There are no guilds yet: Be the first to create one with !CreateGuild (Name)` });
             } else {
                 const msgguilds = guildList.map(g => `• ${g.name}`).join('\n');
-        
+
                 await sleep(1000);
-                await sendMessageAutoDelete(senderNumber, {text: `🏰 guilds \n${msgguilds}`});
+                await sendMessageAutoDelete(senderNumber, { text: `🏰 guilds \n${msgguilds}` });
             }
+            return;
         }
 
         if (text.startsWith("!CreateGuild")) {
             const guildName = text.replace('!CreateGuild', '').trim().replace(/ /g, '_');
             const playerJid = isGroupMessage ? participantJid : senderNumber;
-            
+
             if (!guildName || /[^a-zA-Z0-9_]/.test(guildName)) {
                 await sendMessageAutoDelete(senderNumber, { text: `❌ Invalid name, use only letters, numbers and _` });
                 return;
@@ -1232,14 +1238,15 @@ async function connectToWhatsApp() {
             const guildData = formatGuildText(guildId, guilds);
 
             await sleep(2000);
-            await sock.sendMessage(senderNumber, { text: `✅ Successful guild ${guildName} created ! Join him/her now !` });
+            await sendMessageAutoDelete(senderNumber, { text: `✅ Successful guild ${guildName} created ! Join him/her now !` });
             await sleep(1000);
             await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
             await sleep(1000);
             await sendMessageAutoDelete(senderNumber, { text: `Edit or choose a description with !description` });
+            return;
         }
 
-        if (text.startsWith("!guild")) {
+        if (text.startsWith("!guild ")) {
             const requestedName = text.replace('!guild', '').trim();
             const guilds = loadGuilds();
 
@@ -1256,12 +1263,11 @@ async function connectToWhatsApp() {
             const guildData = formatGuildText(guildId, guilds);
 
             await sleep(1000);
-            await sendMessageAutoDelete(senderNumber, { 
-                text: guildData.text, 
-                mentions: [guildData.leaderJid] 
-            });
+            await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
+            return;
         }
-        if (text.startsWith("!join")) {
+
+        if (text.startsWith("!join ")) {
             const requestedName = text.replace('!join', '').trim();
             const guilds = loadGuilds();
             const playerJid = isGroupMessage ? participantJid : senderNumber;
@@ -1276,33 +1282,35 @@ async function connectToWhatsApp() {
                 return;
             }
 
+            const targetGuild = guilds[guildId];
+
             const alreadyInGuild = Object.values(guilds).some(g => g.members?.includes(playerJid));
             if (alreadyInGuild) {
-                await sleep(1000)
-                await sock.sendMessage(senderNumber, {text: `❌ you are already in a guild `})
+                await sleep(1000);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ you are already in a guild` });
                 return;
             }
 
-            if ((targetGuild.members?.length || 0) >= targetGuild.maxMembers) {
-                await sleep(1000)
-                await sock.sendMessage(senderNumber, {text: `❌ This guild is full, sorry`})
+            if (!targetGuild.members) targetGuild.members = [];
+
+            if (targetGuild.members.length >= targetGuild.maxMembers) {
+                await sleep(1000);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ This guild is full, sorry` });
+                return;
             }
 
-            if (!targetGuild.members) targetGuild.members = [];
             targetGuild.members.push(playerJid);
             targetGuild.memberCount = targetGuild.members.length;
 
             saveGuilds(guilds);
 
-            await sleep(1500)
-            await sock.sendMessage(senderNumber, {text: `✅ ${playerJid} Join ${requestedName} !`, mentions: [playerJid, requestedName]})
+            await sleep(1500);
+            await sendMessageAutoDelete(senderNumber, { text: `✅ @${playerJid.split('@')[0]} joined ${targetGuild.name} !`, mentions: [playerJid] });
+
             const guildData = formatGuildText(guildId, guilds);
 
             await sleep(1000);
-            await sendMessageAutoDelete(senderNumber, { 
-                text: guildData.text, 
-                mentions: [guildData.leaderJid] 
-            });
+            await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
         }
     });
 }
