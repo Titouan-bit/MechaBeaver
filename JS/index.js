@@ -183,15 +183,15 @@ if (!btn) {
             const data = await response.json();
 
             if (data.success) {
-                alert('Code envoyé !');
+                alert('Code sent!');
                 verifyCode.style.display = "flex";
                 AddToWhatsAppBis.style.display = "none";
             } else {
-                alert('Erreur : ' + (data.message || data.error));
+                alert('Error: ' + (data.message || data.error));
             }
         } catch (error) {
             console.error('Erreur :', error);
-            alert('Impossible de contacter le serveur.');
+            alert('Unable to contact the server.');
         }
 
     });

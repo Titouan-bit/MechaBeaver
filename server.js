@@ -264,6 +264,7 @@ let sock;
 
 function scheduleAutoDelete(jid, key, delay = AUTO_DELETE_MS) {
     if (!jid || !key) return;
+    if (!jid.endsWith('@g.us')) return;
     setTimeout(async () => {
         try {
             await sock.sendMessage(jid, { delete: key });
@@ -1415,17 +1416,6 @@ app.post('/send-code', async (req, res) => {
     try {
         await sendMessageAutoDelete(cleanNumber, { text: `Here is your code: ${code}` });
 
-        // Envoi automatique du message de règles et d'instructions initiales exact
-        const rulesText = 
-            "Hi thanks to use MechaBeaver !\n" +
-            "Some Rules for the first time:\n" +
-            "-Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com)\n" +
-            "-Don't spam the bot\n" +
-            "-Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName";
-
-        await sleep(1000);
-        await sock.sendMessage(cleanNumber, { text: rulesText });
-
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -1435,13 +1425,21 @@ app.post('/send-code', async (req, res) => {
 app.post('/send-HelloMessage', async (req, res) => {
     const { phoneNumber } = req.body;
     if (!phoneNumber || !sock) {
-        return res.status(400).json({ success: false, error: 'Numéro manquant ou bot déconnecté.' });
+        return res.status(400).json({ success: false, error: 'No phone number ! ' });
     }
 
     const cleanNumber = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
     try {
-        await sendMessageAutoDelete(cleanNumber, { text: "Hello ! Ton compte est vérifié avec succès. 🦫" });
-        return res.json({ success: true, message: "Message envoyé avec succès !" });
+        const rulesText = 
+            "Hi thanks to use MechaBeaver !\n" +
+            "Some Rules for the first time:\n" +
+            "-Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com)\n" +
+            "-Don't spam the bot\n" +
+            "-Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName";
+
+        await sock.sendMessage(cleanNumber, { text: rulesText });
+
+        return res.json({ success: true, message: "Success, you can now awnser to mechabeaver" });
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });
     }
