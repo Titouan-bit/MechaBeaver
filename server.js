@@ -1019,6 +1019,12 @@ async function connectToWhatsApp() {
         if (text.startsWith('!ChooseName')) {
             let name = text.replace('!ChooseName', '').trim().replace(/ /g, '_');
 
+            if (!name) {
+                await sleep(1000);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ Please provide a name! Example: !ChooseName John` });
+                return;
+            }
+
             if (FORBIDDEN_NAMES.some(forbidden => name.toLowerCase().includes(forbidden))) {
                 if (!AdminsNumbers.includes(senderNumber)) {
                     await sleep(1000);
@@ -1050,17 +1056,6 @@ async function connectToWhatsApp() {
             
             await sleep(1000);
             await sendMessageAutoDelete(senderNumber, { text: `✅ Profile saved as: ${name}` });
-
-            const rulesText = 
-                "📜 *BOT RULES*\n\n" +
-                "1. Be respectful to all members.\n" +
-                "2. Do not spam or exploit bugs.\n" +
-                "3. Follow group-specific forbidden words.\n\n" +
-                "👉 *React with ✅ to this message to accept the rules and unlock commands!*";
-
-            await sleep(1000);
-            await sendMessageAutoDelete(senderNumber, { text: rulesText });
-            await sendMessageAutoDelete(senderNumber, { text: `You can join the community here: https://chat.whatsapp.com/D89cuTgEdJ15xeDT0T8jWU` });
         }
 
         if (text.startsWith("!changeName")) {
@@ -1419,6 +1414,18 @@ app.post('/send-code', async (req, res) => {
     const cleanNumber = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
     try {
         await sendMessageAutoDelete(cleanNumber, { text: `Here is your code: ${code}` });
+
+        // Envoi automatique du message de règles et d'instructions initiales exact
+        const rulesText = 
+            "Hi thanks to use MechaBeaver !\n" +
+            "Some Rules for the first time:\n" +
+            "-Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com)\n" +
+            "-Don't spam the bot\n" +
+            "-Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName";
+
+        await sleep(1000);
+        await sock.sendMessage(cleanNumber, { text: rulesText });
+
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
