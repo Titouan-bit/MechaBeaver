@@ -1594,6 +1594,8 @@ app.post('/send-HelloMessage', async (req, res) => {
     const { phoneNumber } = req.body;
     const users = await loadUsers();
     const cleanNumber = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+    resolveAccountJid(users, cleanNumber)
+    cleanNumber = resolveAccountJid(users, cleanNumber);
     const userData = users[cleanNumber];
     const rulesAccepted = userData?.rulesAccepted === true;
     if (!phoneNumber || !sock) {
