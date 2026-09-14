@@ -1592,25 +1592,37 @@ app.post('/send-code', async (req, res) => {
 
 app.post('/send-HelloMessage', async (req, res) => {
     const { phoneNumber } = req.body;
+    const users = await loadUsers();
+    const cleanNumber = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+    const userData = users[cleanNumber];
+    const rulesAccepted = userData?.rulesAccepted === true;
     if (!phoneNumber || !sock) {
         return res.status(400).json({ success: false, error: 'No phone number ! ' });
     }
+    if (rulesAccepted) {
+        try {
+            await sock.sendMessage(cleanNumber, { text: `Hi thanks to re-use MechaBeaver !` });
+            return res.json({ success: true, message: "Success, you have refind your account !" });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+    } else {
+        try {
+            const rulesText = 
+                "Hi thanks to use MechaBeaver !\n" +
+                "Some Rules for the first time:\n" +
+                "-Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com)\n" +
+                "-Don't spam the bot\n" +
+                "-Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName";
 
-    const cleanNumber = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
-    try {
-        const rulesText = 
-            "Hi thanks to use MechaBeaver !\n" +
-            "Some Rules for the first time:\n" +
-            "-Never call MechaBeaver you can join support here (+33 6 85 76 66 21) (mechabeaver.support@gmail.com)\n" +
-            "-Don't spam the bot\n" +
-            "-Put the emoji ✅ in reaction for Don't see that message in the future ! First You need to choose a name for Save your profile with the command !ChooseName";
+            await sock.sendMessage(cleanNumber, { text: rulesText });
 
-        await sock.sendMessage(cleanNumber, { text: rulesText });
-
-        return res.json({ success: true, message: "Success, you can now awnser to mechabeaver" });
-    } catch (err) {
-        return res.status(500).json({ success: false, error: err.message });
+            return res.json({ success: true, message: "Success, you can now awnser to mechabeaver" });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
     }
+    
 });
 
 app.get('/ping', (req, res) => {
