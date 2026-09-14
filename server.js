@@ -279,6 +279,17 @@ function jidMatchesNumber(jid, cleanNum, users) {
     return false;
 }
 
+function resolveAccountJid(users, jid) {
+    if (!jid) return jid;
+    const direct = users[jid];
+    const linkedJid = direct?.linkedTo;
+    const linked = linkedJid ? users[linkedJid] : null;
+
+    if (direct?.name) return jid;
+    if (linked?.name) return linkedJid;
+    return jid;
+}
+
 let sock;
 
 function scheduleAutoDelete(jid, key, delay = AUTO_DELETE_MS) {
@@ -497,9 +508,7 @@ async function connectToWhatsApp() {
         const steal = async function (targetJid) {
             const users = await loadUsers();
 
-            if (users[targetJid]?.linkedTo) {
-                targetJid = users[targetJid].linkedTo;
-            }
+            targetJid = resolveAccountJid(users, targetJid);
 
             if (!users[participantJid]) users[participantJid] = {};
             if (!users[targetJid]) users[targetJid] = {};
@@ -1126,22 +1135,9 @@ async function connectToWhatsApp() {
                 targetJid = isGroupMessage ? participantJid : senderNumber;
             }
 
-            if (isGroupMessage) {
-                try {
-                    const metadata = await sock.groupMetadata(senderNumber);
-                    const me = metadata.participants.find(p => p.id === participantJid);
-                    console.log('DEBUG !profile - message.key:', JSON.stringify(message.key));
-                    console.log('DEBUG !profile - participant metadata:', JSON.stringify(me));
-                } catch (e) {
-                    console.log('DEBUG !profile - groupMetadata error:', e.message);
-                }
-            }
-
             const users = await loadUsers();
 
-            if (users[targetJid]?.linkedTo) {
-                targetJid = users[targetJid].linkedTo;
-            }
+            targetJid = resolveAccountJid(users, targetJid);
 
             const targetUser = users[targetJid] || {};
 
@@ -1297,9 +1293,7 @@ async function connectToWhatsApp() {
 
             const users = await loadUsers();
 
-            if (users[targetJid]?.linkedTo) {
-                targetJid = users[targetJid].linkedTo;
-            }
+            targetJid = resolveAccountJid(users, targetJid);
 
             if (!users[targetJid]) {
                 users[targetJid] = { coins: 0 };
