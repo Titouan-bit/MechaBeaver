@@ -10,7 +10,6 @@ mongoose.connect(uri)
   .then(() => console.log('🍃 Connecté à MongoDB avec succès !'))
   .catch((err) => console.error('❌ Erreur de connexion MongoDB :', err));
 
-// Schema MongoDB pour la session WhatsApp
 const authSchema = new mongoose.Schema({
     _id: String,
     data: String
@@ -122,7 +121,6 @@ async function useMongoDBAuthState() {
     };
 }
 
-let ISfirstGuild = 1;
 const refusalReplies = [
     "No.",
     "Noooon 🤫",
@@ -730,6 +728,30 @@ async function connectToWhatsApp() {
                 return;
             }
 
+            if (text === "!commands") {
+                if (!Admin) {
+                    await sleep(2000);
+                    await sendMessageAutoDelete(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name)\n- !changeName (name)\n- !contact\n- !rules\n- !shifumi\n- !joke\n- !profile\n- !profile @(person)\n- !steal @(person)\n- !guilds\n- !guild (guildname)\n- !join (guildname)\n- !commands\n- !forbiddenwords` });
+                    return;
+                } else {
+                    await sleep(2000);
+                    await sendMessageAutoDelete(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name)\n- !changeName (name)\n- !contact\n- !rules\n- !shifumi\n- !joke\n- !profile\n- !profile @(person)\n- !steal @(person)\n- !guilds\n- !guild (guildname)\n- !join (guildname)\n- !commands\n- !forbiddenwords \n- !ban @(person) \n- !unban @(person)\n- !mute @(person)\n- !unmute @(person)\n- !warn @(person)\n- !setrules\n- !config-automute\n- !config-autowarn"\n- !delete-auto\n- !config-autoban\n- !welcome` });
+                    return;
+                }
+            }
+
+            if (text === "!commandfunctions") {
+                if (!Admin) {
+                    await sleep(2000);
+                    await sendMessageAutoDelete(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name): You can choose the beaver name you want.\n- !changeName (name): you can update your beaver name\n- !contact : will give you a phone number and an email adress\n- !rules : see the rules of the group\n- !shifumi: play with me, but you will loose 🤡\n- !joke : will generate a hilarous joke\n- !profile : see your profile\n- !profile @(person) : see the profil of a group mate \n- !steal @(person) : try to steal 30 🪙 from the person mentionned\n- !guilds : see the guilds \n- !guild (guildname) : see the real profil of the guild mentionned\n- !join (guildname) : join the guild\n- !commands : see the commands\n- !forbiddenwords : see the forbidden words of the group and the sanctions` });
+                    return;
+                } else {
+                    await sleep(2000);
+                    await sendMessageAutoDelete(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name): You can choose the beaver name you want.\n- !changeName (name): you can update your beaver name\n- !contact : will give you a phone number and an email adress\n- !rules : see the rules of the group\n- !shifumi: play with me, but you will loose 🤡\n- !joke : will generate a hilarous joke\n- !profile : see your profile\n- !profile @(person) : see the profil of a group mate \n- !steal @(person) : try to steal 30 🪙 from the person mentionned\n- !guilds : see the guilds \n- !guild (guildname) : see the real profil of the guild mentionned\n- !join (guildname) : join the guild\n- !commands : see the commands\n- !forbiddenwords : see the forbidden words of the group and the sanctions \n- !ban @(person) : ban the person\n- !unban @(person) : unban the person\n- !mute @(person) : mute that person\n- !unmute @(person) : unmute him\n- !warn @(person) : send a warn to that person\n- !setrules : set the rules of the group\n- !rules : see the rules of the group\n-  !config-automute : config words sho auto-mute the persons\n- !config-autowarn : config words sho auto-warn the persons\n- !delete-auto : delete the auto function of your choice\n- !config-autoban : config words sho auto-ban the persons\n- !welcome : config the welcome message when a person join the group` });
+                    return;
+                }
+            }
+
             if (text === '!config-automute' || text === '!config-autoban' || text === '!config-autowarn') {
                 if (!Admin) {
                     await sleep(3000);
@@ -1035,6 +1057,71 @@ async function connectToWhatsApp() {
             }
         }
 
+        const guildSwitchState = isGroupMessage
+            ? groupData?.waitingForGuildSwitch
+            : (await loadUsers())[senderNumber]?.waitingForGuildSwitch;
+
+        if (guildSwitchState && guildSwitchState.admin === activePlayerJid && Date.now() < guildSwitchState.expiresAt) {
+            const upperText = text.trim().toUpperCase();
+
+            const clearGuildSwitchState = async function () {
+                if (isGroupMessage) {
+                    groupData.waitingForGuildSwitch = null;
+                    groups[senderNumber] = groupData;
+                    await saveGroups(groups);
+                } else {
+                    const users = await loadUsers();
+                    if (users[senderNumber]) {
+                        delete users[senderNumber].waitingForGuildSwitch;
+                        await saveUsers(users);
+                    }
+                }
+            };
+
+            if (upperText.startsWith('N')) {
+                await clearGuildSwitchState();
+                await sendMessageAutoDelete(senderNumber, { text: `✅ Ok, you stay in your guild.` });
+                return;
+            }
+
+            if (upperText.startsWith('Y')) {
+                const guilds = await loadGuilds();
+                const fromGuild = guilds[guildSwitchState.fromGuildId];
+                const toGuild = guilds[guildSwitchState.toGuildId];
+
+                if (!fromGuild || !toGuild) {
+                    await clearGuildSwitchState();
+                    await sendMessageAutoDelete(senderNumber, { text: `❌ One of the guilds no longer exists.` });
+                    return;
+                }
+
+                if (guildSwitchState.isLeader) {
+                    const mentionedJid = message.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0] || null;
+                    const newLeaderJid = mentionedJid || resolveJid(text.replace(/^Y/i, '').trim());
+
+                    if (!newLeaderJid || !fromGuild.members?.includes(newLeaderJid) || newLeaderJid === activePlayerJid) {
+                        await sendMessageAutoDelete(senderNumber, { text: `❌ Mention a valid member of your guild to take over as leader.` });
+                        return;
+                    }
+
+                    fromGuild.leader = newLeaderJid;
+                }
+
+                fromGuild.members = (fromGuild.members || []).filter(m => m !== activePlayerJid);
+                fromGuild.memberCount = fromGuild.members.length;
+
+                if (!toGuild.members) toGuild.members = [];
+                toGuild.members.push(activePlayerJid);
+                toGuild.memberCount = toGuild.members.length;
+
+                await saveGuilds(guilds);
+                await clearGuildSwitchState();
+
+                await sendMessageAutoDelete(senderNumber, { text: `✅ You left your guild and joined ${toGuild.name} !`, mentions: [activePlayerJid] });
+                return;
+            }
+        }
+
         if (!text.startsWith('!')) return;
 
         const command = text.split(" ")[0];
@@ -1089,7 +1176,10 @@ async function connectToWhatsApp() {
             await saveUsers(users);
             
             await sleep(1000);
-            await sendMessageAutoDelete(senderNumber, { text: `✅ Profile saved as: ${name}` });
+            await sock.sendMessage(senderNumber, { text: `✅ Profile saved as: ${name}` });
+            await sock.sendMessage(senderNumber, {text: `Here 100 🪙 for a good start !`})
+            users[playerJid].coins = (users[playerJid].coins || 0) + 100;
+            await saveUsers(users);
         }
 
         if (text.startsWith("!changeName")) {
@@ -1098,24 +1188,29 @@ async function connectToWhatsApp() {
             const users = await loadUsers();
 
             if (!users[playerJid]) {
-                await sendMessageAutoDelete(senderNumber, { text: `❌ Account not found. Use !ChooseName first.` });
+                await sock.sendMessage(senderNumber, { text: `❌ Account not found. Use !ChooseName first.` });
                 return;
             }
 
             if (!newName || /[^a-zA-Z0-9_]/.test(newName)) {
-                await sendMessageAutoDelete(senderNumber, { text: `❌ Invalid name. Use only letters, numbers, and _` });
+                await sock.sendMessage(senderNumber, { text: `❌ Invalid name. Use only letters, numbers, and _` });
                 return;
             }
 
             users[playerJid].name = newName;
             await saveUsers(users);
-            await sendMessageAutoDelete(senderNumber, { text: `✅ Name updated to: ${newName}` });
+            await sock.sendMessage(senderNumber, { text: `✅ Name updated to: ${newName}` });
         }
 
         if (text === "!commands") {
             await sleep(1000);
-            await sendMessageAutoDelete(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name)\n- !changeName (name)\n- !contact\n- !rules\n- !shifumi\n- !joke\n- !profile\n- !steal (number)\n- !guilds` });
+            await sock.sendMessage(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name)\n- !changeName (name)\n- !contact\n- !rules\n- !shifumi\n- !joke\n- !profile\n- !profile @(person)\n- !steal @(person)\n- !guilds\n- !guild (guildname)\n- !join (guildname)\n- !commands\n- !forbiddenwords` });
         }
+
+        if (text === "!commandfunctions") {
+                await sleep(2000);
+                await sock.sendMessage(senderNumber, { text: `✅ Commands list:\n- !ChooseName (name): You can choose the beaver name you want.\n- !changeName (name): you can update your beaver name\n- !contact : will give you a phone number and an email adress\n- !rules : see the rules of the group\n- !shifumi: play with me, but you will loose 🤡\n- !joke : will generate a hilarous joke\n- !profile : see your profile\n- !profile @(person) : see the profil of a group mate \n- !steal @(person) : try to steal 30 🪙 from the person mentionned\n- !guilds : see the guilds \n- !guild (guildname) : see the real profil of the guild mentionned\n- !join (guildname) : join the guild\n- !commands : see the commands\n- !forbiddenwords : see the forbidden words of the group and the sanctions` });
+            }
 
         if (text === "!contact") {
             await sleep(1000);
@@ -1324,15 +1419,23 @@ async function connectToWhatsApp() {
             const guildName = text.replace('!CreateGuild', '').trim().replace(/ /g, '_');
             const playerJid = isGroupMessage ? participantJid : senderNumber;
 
+            const guilds = await loadGuilds();
+
+            const alreadyInAGuild = Object.values(guilds).some(g => g.members?.includes(playerJid));
+            if (alreadyInAGuild) {
+                await sleep(1000);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ You are already in a guild, leave it before creating a new one` });
+                return;
+            }
+
             if (!guildName || /[^a-zA-Z0-9_]/.test(guildName)) {
                 await sendMessageAutoDelete(senderNumber, { text: `❌ Invalid name, use only letters, numbers and _` });
                 return;
             }
-            const guilds = await loadGuilds();
 
             const nameExists = Object.values(guilds).some(g => g.name.toLowerCase() === guildName.toLowerCase());
             if (nameExists) {
-                await sendMessageAutoDelete(senderNumber, { text: `❌ Ce nom de guilde est déjà pris !` });
+                await sendMessageAutoDelete(senderNumber, { text: `❌ This name is already taken !` });
                 return;
             }
 
@@ -1402,10 +1505,45 @@ async function connectToWhatsApp() {
 
             const targetGuild = guilds[guildId];
 
-            const alreadyInGuild = Object.values(guilds).some(g => g.members?.includes(playerJid));
-            if (alreadyInGuild) {
-                await sleep(1000);
-                await sendMessageAutoDelete(senderNumber, { text: `❌ you are already in a guild` });
+            const currentGuildEntry = Object.entries(guilds).find(([_, g]) => g.members?.includes(playerJid));
+
+            if (currentGuildEntry) {
+                const [currentGuildId, currentGuild] = currentGuildEntry;
+
+                if (currentGuildId === guildId) {
+                    await sleep(1000);
+                    await sendMessageAutoDelete(senderNumber, { text: `❌ You are already in ${targetGuild.name} !` });
+                    return;
+                }
+
+                const isLeader = currentGuild.leader === playerJid;
+                const switchState = {
+                    admin: playerJid,
+                    fromGuildId: currentGuildId,
+                    toGuildId: guildId,
+                    isLeader,
+                    expiresAt: Date.now() + 3 * 60 * 1000
+                };
+
+                if (isGroupMessage) {
+                    groupData.waitingForGuildSwitch = switchState;
+                    groups[senderNumber] = groupData;
+                    await saveGroups(groups);
+                } else {
+                    const users = await loadUsers();
+                    if (!users[senderNumber]) users[senderNumber] = {};
+                    users[senderNumber].waitingForGuildSwitch = switchState;
+                    await saveUsers(users);
+                }
+
+                await sleep(1500);
+                if (isLeader) {
+                    await sendMessageAutoDelete(senderNumber, { text: `❌ You are already in a guild and you are the leader, want to give the guild to someone ?` });
+                    await sleep(1500);
+                    await sendMessageAutoDelete(senderNumber, { text: `Type Y @(person) to give it and join ${requestedName}, or N to stay in ${currentGuild.name}, within 3min` });
+                } else {
+                    await sendMessageAutoDelete(senderNumber, { text: `❌ You are already in ${currentGuild.name}. Type Y to leave it and join ${requestedName}, or N to stay, within 3min` });
+                }
                 return;
             }
 
@@ -1429,11 +1567,11 @@ async function connectToWhatsApp() {
 
             await sleep(1000);
             await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
+            return;
         }
     });
 }
 
-// Lancement une fois la base connectée
 mongoose.connection.once('open', () => {
     connectToWhatsApp();
 });
