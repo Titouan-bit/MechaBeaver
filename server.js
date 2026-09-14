@@ -1126,6 +1126,17 @@ async function connectToWhatsApp() {
                 targetJid = isGroupMessage ? participantJid : senderNumber;
             }
 
+            if (isGroupMessage) {
+                try {
+                    const metadata = await sock.groupMetadata(senderNumber);
+                    const me = metadata.participants.find(p => p.id === participantJid);
+                    console.log('DEBUG !profile - message.key:', JSON.stringify(message.key));
+                    console.log('DEBUG !profile - participant metadata:', JSON.stringify(me));
+                } catch (e) {
+                    console.log('DEBUG !profile - groupMetadata error:', e.message);
+                }
+            }
+
             const users = await loadUsers();
 
             if (users[targetJid]?.linkedTo) {
