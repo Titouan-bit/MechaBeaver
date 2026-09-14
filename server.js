@@ -1597,12 +1597,13 @@ app.post('/send-HelloMessage', async (req, res) => {
     cleanNumber = resolveAccountJid(users, cleanNumber);
     const userData = users[cleanNumber];
     const rulesAccepted = userData?.rulesAccepted === true;
+    const name = userData?.name
     if (!phoneNumber || !sock) {
         return res.status(400).json({ success: false, error: 'No phone number ! ' });
     }
     if (rulesAccepted) {
         try {
-            await sock.sendMessage(cleanNumber, { text: `Hi thanks to re-use MechaBeaver !` });
+            await sock.sendMessage(cleanNumber, { text: `Hi thanks to re-use MechaBeaver ${name} !` });
             return res.json({ success: true, message: "Success, you have refind your account !" });
         } catch (err) {
             return res.status(500).json({ success: false, error: err.message });
