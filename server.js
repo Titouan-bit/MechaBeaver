@@ -1569,6 +1569,45 @@ async function connectToWhatsApp() {
             await sock.sendMessage(senderNumber, { text: guildData.text, mentions: [guildData.leaderJid] });
             return;
         }
+
+        if (text.startsWith("!delete")) {
+            if (text === "!delete auto") {
+                return;
+                //faire la fonction la
+            }
+
+            
+            const requestedGuild = text.replace('!delete', '')
+            const guilds = await loadGuilds();
+            const playerJid = isGroupMessage ? participantJid : senderNumber;
+
+            const guildId = Object.keys(guilds).find(
+                id => guilds[id].name.toLowerCase() === requestedGuild.toLowerCase()
+            );
+
+            if (!guildId) {
+                await sleep(1500);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ There is no guild : ${requestedGuild}` });
+                return;
+            }
+
+            const targetGuild = guilds[guildId];
+            const isLeader = targetGuild.leader === playerJid;
+
+            if (!isLeader)  {
+                await sleep(1500);
+                await sendMessageAutoDelete(senderNumber, { text: `❌ You are not the leader of : ${requestedGuild} 🤡` });
+                return;
+            } else {
+                delete guilds[guildId];
+                await saveGuilds(guilds);
+                await sleep(1500);
+                await sendMessageAutoDelete(senderNumber, { text: `Succesfull deleted that guild 😢` });
+                return;
+            }
+            
+        }
+            
     });
 }
 
