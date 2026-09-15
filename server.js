@@ -215,7 +215,7 @@ async function isGroupAdmin(groupJid, participantJid) {
 }
 
 const commands = ["!ChooseName", "!changeName", "!commands", "!contact", "!forbiddenwords", "!rules", "!test", "!shifumi", "!joke", "!profile", "!guilds", "!steal"];
-const commandsWithContent = ["!ChooseName", "!changeName", "!steal", "!CreateGuild", "!give", "!description", "!guild", "!join"];
+const commandsWithContent = ["!ChooseName", "!changeName", "!steal", "!CreateGuild", "!give", "!description", "!guild", "!join", "!delete"];
 const AdminCommandsWithContent = ["!ban", "!unban", "!mute", "!unmute", "!warn"];
 const AdminCommands = ["!setrules", "!config-automute", "!config-autowarn", "!delete-auto", "!config-autoban", "!welcome"];
 
@@ -1573,7 +1573,6 @@ async function connectToWhatsApp() {
         if (text.startsWith("!delete")) {
             if (text === "!delete auto") {
                 return;
-                //faire la fonction la
             }
 
             
