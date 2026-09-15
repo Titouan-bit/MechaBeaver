@@ -1576,7 +1576,7 @@ async function connectToWhatsApp() {
             }
 
             
-            const requestedGuild = text.replace('!delete', '')
+            const requestedGuild = text.replace('!delete', '').trim();
             const guilds = await loadGuilds();
             const playerJid = isGroupMessage ? participantJid : senderNumber;
 
