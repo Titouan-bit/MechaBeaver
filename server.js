@@ -45,8 +45,6 @@ async function saveData(id, value) {
         console.error(`Erreur écriture ${id} MongoDB:`, e);
     }
 }
-
-// Gestion d'état Baileys 100% compatible MongoDB
 async function useMongoDBAuthState() {
     const writeData = async (data, id) => {
         try {
@@ -1407,7 +1405,14 @@ async function connectToWhatsApp() {
             if (Object.keys(guildsData).length === 0) {
                 await sendMessageAutoDelete(senderNumber, { text: `There are no guilds yet: Be the first to create one with !CreateGuild (Name)` });
             } else {
-                const msgguilds = guildList.map(g => `• ${g.name}`).join('\n');
+                const msgguilds = guildList.map(g => {
+                    const guildName = g.guildName;
+                    const guildRank = g.guildRank;
+                    const memberCount = g.members ? g.members.length : 0;
+                    const coins = g.guildcoins || 0;
+
+                    return `• ${guildName} || ${guildRank} | (Membres: ${memberCount} | 🪙 ${coins})`;
+                }).join('\n');
 
                 await sleep(1000);
                 await sendMessageAutoDelete(senderNumber, { text: `🏰 guilds \n${msgguilds}` });
