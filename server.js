@@ -4,7 +4,7 @@ const { makeWASocket, initAuthCreds, BufferJSON } = require('@whiskeysockets/bai
 const pino = require('pino');
 const mongoose = require('mongoose');
 
-const uri = "mongodb+srv://cordetitouan_db_user:C4acjgzdyKx79C19@cluster0.0gs17s7.mongodb.net/?appName=Cluster0";
+const uri = process.env.MONGO_URI || "mongodb+srv://cordetitouan_db_user:C4acjgzdyKx79C19@cluster0.0gs17s7.mongodb.net/whatsapp_bot?appName=Cluster0";
 
 mongoose.connect(uri)
   .then(() => console.log('🍃 Connecté à MongoDB avec succès !'))
@@ -118,7 +118,7 @@ async function useMongoDBAuthState() {
         }
     };
 }
-
+let isgalerapagos = 0;
 const refusalReplies = [
     "No.",
     "Noooon 🤫",
@@ -126,7 +126,18 @@ const refusalReplies = [
     "Who do you think you're talking to? 🤡",
     "I'm not your slave, cope 🥱"
 ];
-
+const cards = [
+    "Glouton: Je peux manger 2 bois au lieu de 1 nourriture, même sans pénurie.",
+    "Charmeur de serpents: Si je tire la boule noire au bois, je remets tout et je re-tire. Si je re-échoue, je suis malade et mon voisin de droite aussi.",
+    "Capitaine: Prioritaire pour une place sur le radeau (pas pour l'eau/nourriture).",
+    "Récupérateur / Charognard: Quand un joueur meurt, je récupère toujours 1 de ses cartes Épave avant les autres.",
+    "Vendeur: Au début de chaque tour je peux désigner un joueur et échanger une de mes cartes contre une au hasard dans sa main.",
+    "Enfant: Pas besoin de place sur le radeau, mais je ne peux pas collecter plus de 2 eau / 2 bois / 2 nourriture par tour. Je ne peux pas partir seul.",
+    "Garde du corps: Les joueurs juste avant et après moi ne peuvent pas être visés par un tir. Je suis le seul à pouvoir les tirer.",
+    "Costaud: Je fais 2 actions par tour mais je consomme 2 eau et 2 nourriture par tour.",
+    "Hypnotiseur: 1 fois dans la partie je peux échanger tous les Personnages devant les autres joueurs, mais je garde le mien.",
+    "Nudiste: Il doit révéler toute sa main de cartes Épave face visible en permanence, sauf s'il possède la carte <Vieux slip> devant lui. S'il a le slip, il est habillé et peut cacher ses cartes.",
+]
 const jokes = [
     "Why don't scientists trust atoms? Because they make up everything! ⚛️",
     "I told my doctor that I broke my arm in two places. He told me to stop going to those places 🏥",
@@ -677,6 +688,25 @@ async function connectToWhatsApp() {
                 await sleep(1000);
                 await nope();
                 return;
+            }
+            if (text === '!galerapagos'){
+                await sendMessage(senderNumber, {text: `Quels sont les noms des joueurs ? veuillez indiquer avec !joueurs: (séparés par un espace)`});
+                isgalerapagos = 1;
+            }
+            if (text.startsWith('!joueurs')){
+                if (isgalerapagos == 1){
+                    const args = text.replace('!joueurs', '').trim().split(' ').filter(Boolean);
+                    if (!args){
+                        await sendMessage('mets au moins 2 noms après !joueurs');
+                    }
+                    args.forEach( async (name, i) => {
+                        const card = cards[Math.floor(Math.random() * cards.length)];
+                        await sleep(i * 1000);
+                        await sendMessage(senderNumber, {text: `${name}: carte : ${card}`});
+                    });
+                } else {
+                    await sendMessage(senderNumber, {text: `veuillez entrer dans le jeu galérapagos avant`})
+                }
             }
 
             if (text === '!setrules') {
