@@ -690,7 +690,7 @@ async function connectToWhatsApp() {
                 return;
             }
             if (text === '!galerapagos'){
-                await sendMessage(senderNumber, {text: `Quels sont les noms des joueurs ? veuillez indiquer avec !joueurs: (séparés par un espace)`});
+                await sock.sendMessage(senderNumber, {text: `Quels sont les noms des joueurs ? veuillez indiquer avec !joueurs: (séparés par un espace)`});
                 isgalerapagos = 1;
             }
             if (text.startsWith('!joueurs')){
