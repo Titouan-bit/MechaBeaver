@@ -4,7 +4,7 @@ const { makeWASocket, initAuthCreds, BufferJSON } = require('@whiskeysockets/bai
 const pino = require('pino');
 const mongoose = require('mongoose');
 
-const uri = process.env.MONGO_URI || "mongodb+srv://cordetitouan_db_user:C4acjgzdyKx79C19@cluster0.0gs17s7.mongodb.net/whatsapp_bot?appName=Cluster0";
+const uri = process.env.MONGO_URI || "mongodb+srv://cordetitouan_db_user:HJopHTcYSIxTQZDZ@cluster0.0gs17s7.mongodb.net/";
 
 mongoose.connect(uri)
   .then(() => console.log('🍃 Connecté à MongoDB avec succès !'))
@@ -223,8 +223,8 @@ async function isGroupAdmin(groupJid, participantJid) {
     }
 }
 
-const commands = ["!ChooseName", "!changeName", "!commands", "!contact", "!forbiddenwords", "!rules", "!test", "!shifumi", "!joke", "!profile", "!guilds", "!steal"];
-const commandsWithContent = ["!ChooseName", "!changeName", "!steal", "!CreateGuild", "!give", "!description", "!guild", "!join", "!delete"];
+const commands = ["!ChooseName", "!changeName", "!commands", "!contact", "!forbiddenwords", "!rules", "!test", "!shifumi", "!joke", "!profile", "!guilds", "!steal", "!galerapagos"];
+const commandsWithContent = ["!ChooseName", "!changeName", "!steal", "!CreateGuild", "!give", "!description", "!guild", "!join", "!delete", "!joueurs"];
 const AdminCommandsWithContent = ["!ban", "!unban", "!mute", "!unmute", "!warn"];
 const AdminCommands = ["!setrules", "!config-automute", "!config-autowarn", "!delete-auto", "!config-autoban", "!welcome"];
 
@@ -697,15 +697,17 @@ async function connectToWhatsApp() {
                 if (isgalerapagos == 1){
                     const args = text.replace('!joueurs', '').trim().split(' ').filter(Boolean);
                     if (!args){
-                        await sendMessage('mets au moins 2 noms après !joueurs');
+                        await sock.sendMessage('mets au moins 2 noms après !joueurs');
+                        return;
                     }
                     args.forEach( async (name, i) => {
                         const card = cards[Math.floor(Math.random() * cards.length)];
                         await sleep(i * 1000);
-                        await sendMessage(senderNumber, {text: `${name}: carte : ${card}`});
+                        await sock.sendMessage(senderNumber, {text: `${name}: carte : ${card}`});
                     });
                 } else {
-                    await sendMessage(senderNumber, {text: `veuillez entrer dans le jeu galérapagos avant`})
+                    await sock.sendMessage(senderNumber, {text: `veuillez entrer dans le jeu galérapagos avant`});
+                    return;
                 }
             }
 
